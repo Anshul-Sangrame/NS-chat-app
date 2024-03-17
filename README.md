@@ -7,7 +7,7 @@ NS chat app
 make
 ./main
 ```
-### Removing all executables
+### Removing all binaries
 ```bash
 make clean
 ```
