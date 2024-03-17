@@ -2,20 +2,26 @@
 
 #include <string>
 #include <arpa/inet.h>
-#define BUFF_SIZE 4096 + 1
+#define BODY_SIZE 4096
 
 #define DATA 0
 #define CONTROL 1
 
-struct message
+struct message_header
 {
-    int type;
-    time_t time;
-    std::string body;
+    uint64_t type;
+    uint64_t size;
+    int64_t time;
 };
 
-std::string messageToString(message);
-message stringToMessage(std::string);
+#define HEADER_SIZE sizeof(message_header)
+#define BUFF_SIZE (HEADER_SIZE + BODY_SIZE)
+
+struct message
+{
+    struct message_header hdr;
+    std::string body;
+};
 
 // Can be used in priority queue or sorting
 bool operator<(const message &a, const message &b);
@@ -30,6 +36,11 @@ protected:
     struct sockaddr_in to_addr;
     bool SSL;
     socklen_t len;
+    
+    message construct_message(std::string);
+    std::string read_raw_data();
+    std::string messageToString(message);
+    void send_data(std::string);
 
 public:
     connection();

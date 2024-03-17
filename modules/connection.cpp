@@ -6,88 +6,21 @@
 using namespace std;
 std::string to_text[] = {"DATA", "CONTROL"};
 
-string messageToString(message msg)
-{
-    string txt =
-        string("TYPE ") + to_text[msg.type] + "\n" +
-        "SIZE " + to_string(msg.body.size()) + "\n" +
-        "TIME " + to_string(msg.time) + "\n" +
-        "#\n" + msg.body;
-    return txt;
-}
-
-message stringToMessage(string s)
-{
-    message res;
-    stringstream ss(s);
-    string line;
-    stringstream lineStream;
-    string token;
-    string value;
-    // Get TYPE
-    if (!getline(ss,line)) throw runtime_error("Invalid format");
-    token = strtok(&line[0]," ");
-    // if (!token) throw runtime_error("Invalid format");
-    if (token != "TYPE") throw runtime_error("Invalid format");
-    if (!(ss >> value)) throw runtime_error("Invalid format");
-    if (value != "DATA" && value != "CONTROL") throw runtime_error("Invalid format");
-    if (value == "DATA") res.type = DATA;
-    if (value == "CONTROL") res.type = CONTROL;
-
-    // Get SIZE
-    if (!getline(ss,line)) throw runtime_error("Invalid format");
-    if (!(ss >> token)) throw runtime_error("Invalid format");
-    if (token != "SIZE") throw runtime_error("Invalid format");
-    if (!(ss >> value)) throw runtime_error("Invalid format");
-    try
-    {
-        stoi(value);
-    }
-    catch(const std::exception& e)
-    {
-        throw runtime_error("Invalid format");
-    }
-
-    // Get TIME
-    if (!getline(ss,line)) throw runtime_error("Invalid format");
-    if (!(ss >> token)) throw runtime_error("Invalid format");
-    if (token != "TIME") throw runtime_error("Invalid format");
-    if (!(ss >> value)) throw runtime_error("Invalid format");
-    try
-    {
-        res.time = stoi(value);
-    }
-    catch(const std::exception& e)
-    {
-        throw runtime_error("Invalid format");
-    }
-
-    // Check for #
-    if (!getline(ss,line)) throw runtime_error("Invalid format");
-    if (!(ss >> token)) throw runtime_error("Invalid format");
-    if (token != "#") throw runtime_error("Invalid format");
-    
-    // body
-    res.body = ss.str();
-
-    return {.type = DATA, .time = 90, .body = "jsfk"};
-}
-
 bool operator<(const message &a, const message &b)
 {
-    return (a.time < b.time);
+    return (a.hdr.time < b.hdr.time);
 }
 bool operator>(const message &a, const message &b)
 {
-    return (a.time > b.time);
+    return (a.hdr.time > b.hdr.time);
 }
 bool operator<=(const message &a, const message &b)
 {
-    return (a.time <= b.time);
+    return (a.hdr.time <= b.hdr.time);
 }
 bool operator>=(const message &a, const message &b)
 {
-    return (a.time >= b.time);
+    return (a.hdr.time >= b.hdr.time);
 }
 
 connection::connection()
@@ -95,25 +28,57 @@ connection::connection()
     SSL = false;
 }
 
-void connection::send(message msg)
+string connection::read_raw_data()
 {
-    string payload = messageToString(msg);
+    char buffer[BUFF_SIZE + 1];
+    int n;
+
     if (!SSL)
-        sendto(sockfd, payload.c_str(), payload.size(), MSG_CONFIRM, (const struct sockaddr *)&to_addr, len);
+        n = recvfrom(sockfd, (char *)buffer, BUFF_SIZE, MSG_WAITALL , (struct sockaddr *)&to_addr, &len);
+    buffer[n] = '\0';
+    
+    string res;
+    res.append(buffer,n+1);
+
+    return res;
+}
+
+message connection::construct_message(std::string msg)
+{
+    message_header hdr;
+
+    memcpy(&hdr,msg.c_str(),HEADER_SIZE);
+
+    string body(msg.c_str() + HEADER_SIZE);
+
+    return {.hdr = hdr,.body = body};
 }
 
 message connection::read()
 {
+    return construct_message(read_raw_data());
+}
+
+string connection::messageToString(message msg)
+{
+    char header[HEADER_SIZE];
+    header[HEADER_SIZE] = '\0';
+    memcpy(header, &(msg.hdr), HEADER_SIZE);
+    string res;
+    res.append(header, HEADER_SIZE);
+    res.append(msg.body);
+    return res;
+}
+
+void connection::send_data(string msg)
+{
     if (!SSL)
-    {
-        char buffer[BUFF_SIZE];
-        int n;
-        n = recvfrom(sockfd, (char *)buffer, BUFF_SIZE, MSG_WAITALL, (struct sockaddr *)&to_addr, &len);
-        buffer[n] = '\0';
-        cout << "TOTAL SIZE:" << n << "\n";
-        cout << buffer << "\n";
-        return stringToMessage(buffer);
-    }
+        sendto(sockfd, msg.c_str(), msg.size(), MSG_CONFIRM, (const struct sockaddr *)&to_addr, len);
+}
+
+void connection::send(message msg)
+{
+    send_data(messageToString(msg));
 }
 
 connection::~connection()
@@ -179,5 +144,5 @@ void server_connection::startSSL()
 
 server_connection::~server_connection()
 {
-    // Destroy 
+    // Destroy
 }
