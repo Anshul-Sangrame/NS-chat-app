@@ -18,7 +18,7 @@ message to_message(string msg)
 void displayMessage(message msg)
 {
     cout << "TYPE: " << msg.hdr.type << "\n";
-    cout << "TIME: " << asctime(localtime(&(msg.hdr.time))) << "\n";
+    cout << "TIME: " << asctime(localtime(&(msg.hdr.time)));
     cout << "SIZE: " << msg.hdr.size << "\n";
     cout << "BODY:\n"
          << msg.body << "\n";
@@ -27,6 +27,11 @@ void displayMessage(message msg)
 int main(int argc, char *argv[])
 {
     cout << "main.cpp\n";
+    // Initialize OpenSSL
+    SSL_library_init();
+    SSL_load_error_strings();
+    ERR_load_crypto_strings();
+    OpenSSL_add_all_algorithms();
 
     connection *con = NULL;
 
@@ -40,6 +45,9 @@ int main(int argc, char *argv[])
                 message msg = con->read();
                 displayMessage(msg);
                 con->send(to_message("CHAT_OK_REPLY"));
+                msg = con->read();
+                displayMessage(msg);
+                con->send(to_message("hello_OK"));
                 con->startSSL();
                 break;
             }
@@ -48,6 +56,9 @@ int main(int argc, char *argv[])
                 con = new client_connection(8080);
                 con->send(to_message("CHAT_HELLO"));
                 message msg = con->read();
+                displayMessage(msg);
+                con->send(to_message("hello"));
+                msg = con->read();
                 displayMessage(msg);
                 // sleep(5);
                 con->startSSL();

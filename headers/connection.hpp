@@ -40,6 +40,8 @@ protected:
     socklen_t len;
     SSL_CTX *ctx;
     SSL *ssl;
+    BIO *bio;
+    struct timeval timeout;
     
     message construct_message(std::string);
     std::string read_raw_data();

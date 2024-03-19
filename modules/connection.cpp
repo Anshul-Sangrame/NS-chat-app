@@ -102,11 +102,16 @@ client_connection::client_connection(uint16_t port)
     to_addr.sin_addr.s_addr = INADDR_ANY;
 
     len = sizeof(to_addr);
+
+    if (connect(sockfd, (struct sockaddr *)&to_addr, len) != 0)
+    {
+        throw runtime_error(string("connect failed: ") + strerror(errno));
+    }
 }
 
 void client_connection::startSSL()
 {
-    ctx = SSL_CTX_new(DTLSv1_2_client_method());
+    ctx = SSL_CTX_new(DTLS_client_method());
     SSL_CTX_set_min_proto_version(ctx, DTLS1_2_VERSION);
 
     if (!SSL_CTX_load_verify_locations(ctx, "root-cert.crt", NULL))
@@ -114,12 +119,22 @@ void client_connection::startSSL()
         ERR_print_errors_fp(stderr);
         throw runtime_error("");
     }
+
+    const char* cipher_list = "ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:TLS_AES_256_GCM_SHA384:AES256-GCM-SHA384:AES128-SHA256:AES128-SHA";
+
+    if(SSL_CTX_set_cipher_list(ctx, cipher_list) == 0) {
+        ERR_print_errors_fp(stderr);
+        throw runtime_error("Unable to set cipher suites");
+    }
+
     ssl = SSL_new(ctx);
-    SSL_set_fd(ssl, sockfd);
+    bio = BIO_new_dgram(sockfd, BIO_CLOSE);
+    BIO_ctrl(bio, BIO_CTRL_DGRAM_SET_CONNECTED, 0, &to_addr);
+    SSL_set_bio(ssl, bio, bio);
 
     if (SSL_connect(ssl) != 1)
-    // if (SSL_do_handshake(ssl) != 1)
     {
+        ERR_print_errors_fp(stderr);
         throw runtime_error("Error in handshake");
     }
     cout << "SSL success\n";
@@ -132,8 +147,12 @@ client_connection::~client_connection()
         SSL_shutdown(ssl);
         SSL_free(ssl);
     }
-    if (ctx) SSL_CTX_free(ctx);
-    close(sockfd);
+    else
+    {
+        close(sockfd);
+    }
+    if (ctx)
+        SSL_CTX_free(ctx);
 }
 
 server_connection::server_connection(uint16_t port)
@@ -164,7 +183,7 @@ server_connection::server_connection(uint16_t port)
 void server_connection::startSSL()
 {
     is_SSL = true;
-    ctx = SSL_CTX_new(DTLSv1_2_server_method());
+    ctx = SSL_CTX_new(DTLS_server_method());
     SSL_CTX_set_min_proto_version(ctx, DTLS1_2_VERSION);
     if (SSL_CTX_use_certificate_file(ctx, "root-cert.crt", SSL_FILETYPE_PEM) <= 0)
     {
@@ -177,14 +196,28 @@ void server_connection::startSSL()
         throw runtime_error("");
     }
 
-    ssl = SSL_new(ctx);
-    SSL_set_fd(ssl, sockfd);
+    const char* cipher_list = "ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:TLS_AES_256_GCM_SHA384:AES256-GCM-SHA384:AES128-SHA256:AES128-SHA";
 
-    if (SSL_accept(ssl) != 1)
+    if(SSL_CTX_set_cipher_list(ctx, cipher_list) == 0) {
+        ERR_print_errors_fp(stderr);
+        throw runtime_error("Unable to set cipher suites");
+    }
+
+    ssl = SSL_new(ctx);
+    bio = BIO_new_dgram(sockfd, BIO_NOCLOSE);
+    timeout.tv_sec = 5;
+    timeout.tv_usec = 0;
+    BIO_ctrl(bio, BIO_CTRL_DGRAM_SET_RECV_TIMEOUT, 0, &timeout);
+    SSL_set_bio(ssl, bio, bio);
+    // SSL_set_fd(ssl, sockfd);
+
     // if (SSL_do_handshake(ssl) != 1)
+    // if (DTLSv1_listen(ssl,(BIO_ADDR *)&to_addr) < 1)
+    if (SSL_accept(ssl) != 1)
     {
+        ERR_print_errors_fp(stderr);
         throw runtime_error("Error in handshake");
-    }    
+    }
 
     cout << "SSL success\n";
 }
@@ -196,5 +229,6 @@ server_connection::~server_connection()
         SSL_shutdown(ssl);
         SSL_free(ssl);
     }
-    if (ctx) SSL_CTX_free(ctx);
+    if (ctx)
+        SSL_CTX_free(ctx);
 }
