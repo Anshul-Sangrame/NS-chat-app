@@ -1,6 +1,28 @@
 #include <iostream>
+// #include<unistd.h>
 #include <connection.hpp>
 using namespace std;
+
+message to_message(string msg)
+{
+    message res;
+
+    res.hdr.type = DATA;
+    res.hdr.size = msg.size();
+    res.hdr.time = time(NULL);
+    res.body = msg;
+
+    return res;
+}
+
+void displayMessage(message msg)
+{
+    cout << "TYPE: " << msg.hdr.type << "\n";
+    cout << "TIME: " << asctime(localtime(&(msg.hdr.time))) << "\n";
+    cout << "SIZE: " << msg.hdr.size << "\n";
+    cout << "BODY:\n"
+         << msg.body << "\n";
+}
 
 int main(int argc, char *argv[])
 {
@@ -16,27 +38,19 @@ int main(int argc, char *argv[])
             {
                 con = new server_connection(8080);
                 message msg = con->read();
-                cout << "TYPE: " << msg.hdr.type << "\n";
-                cout << "TIME: " << asctime(localtime(&(msg.hdr.time)));
-                cout << "SIZE: " << msg.hdr.size << "\n";
-                cout << "BODY:\n"
-                     << msg.body << "\n";
-                string body = "hello world to you";
-                con->send({.hdr = {.type = DATA, .size = body.size(), .time = time(NULL)}, .body = body});
+                displayMessage(msg);
+                con->send(to_message("CHAT_OK_REPLY"));
+                con->startSSL();
                 break;
             }
             if (argv[i] == string("-c"))
             {
                 con = new client_connection(8080);
-                string body = "hello world";
-                con->send({.hdr = {.type = DATA, .size = body.size(), .time = time(NULL)}, .body = body});
-                con->send({.hdr = {.type = DATA, .size = body.size(), .time = time(NULL)}, .body = body});
+                con->send(to_message("CHAT_HELLO"));
                 message msg = con->read();
-                cout << "TYPE: " << msg.hdr.type << "\n";
-                cout << "TIME: " << asctime(localtime(&(msg.hdr.time))) << "\n";
-                cout << "SIZE: " << msg.hdr.size << "\n";
-                cout << "BODY:\n"
-                     << msg.body << "\n";
+                displayMessage(msg);
+                // sleep(5);
+                con->startSSL();
                 break;
             }
         }

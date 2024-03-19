@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS = -I./headers/ -L./modules/
+CXXFLAGS = -I./headers/
 
 all: pre main
 
@@ -7,7 +7,7 @@ pre:
 	cd modules && make
 	
 main: main.cpp ./modules/libhandler.a
-	$(CXX) $(CXXFLAGS) main.cpp -lhandler -o main
+	$(CXX) $(CXXFLAGS) main.cpp -L./modules/ -lhandler -lssl -lcrypto -o main
 
 clean: 
 	cd modules && make clean

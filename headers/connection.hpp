@@ -2,6 +2,8 @@
 
 #include <string>
 #include <arpa/inet.h>
+#include <openssl/ssl.h>
+#include <openssl/err.h>
 #define BODY_SIZE 4096
 
 #define DATA 0
@@ -34,8 +36,10 @@ class connection
 protected:
     int sockfd;
     struct sockaddr_in to_addr;
-    bool SSL;
+    bool is_SSL;
     socklen_t len;
+    SSL_CTX *ctx;
+    SSL *ssl;
     
     message construct_message(std::string);
     std::string read_raw_data();
