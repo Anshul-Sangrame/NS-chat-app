@@ -132,6 +132,8 @@ void client_connection::startSSL()
     BIO_ctrl(bio, BIO_CTRL_DGRAM_SET_CONNECTED, 0, &to_addr);
     SSL_set_bio(ssl, bio, bio);
 
+    SSL_set_tlsext_host_name(ssl, "duckduckgo.com");
+
     if (SSL_connect(ssl) != 1)
     {
         ERR_print_errors_fp(stderr);

@@ -27,11 +27,6 @@ void displayMessage(message msg)
 int main(int argc, char *argv[])
 {
     cout << "main.cpp\n";
-    // Initialize OpenSSL
-    SSL_library_init();
-    SSL_load_error_strings();
-    ERR_load_crypto_strings();
-    OpenSSL_add_all_algorithms();
 
     connection *con = NULL;
 
