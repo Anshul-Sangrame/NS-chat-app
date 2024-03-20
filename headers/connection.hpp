@@ -2,6 +2,7 @@
 
 #include <string>
 #include <arpa/inet.h>
+#include <sys/socket.h>
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 #define BODY_SIZE 4096

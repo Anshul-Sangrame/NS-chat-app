@@ -5,7 +5,10 @@ NS chat app
 ### Execution instruction
 ```bash
 make
-./main
+# for server
+./main -s
+# for client
+./main -c
 ```
 ### Removing all binaries
 ```bash

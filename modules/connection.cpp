@@ -102,15 +102,14 @@ client_connection::client_connection(uint16_t port)
     to_addr.sin_addr.s_addr = INADDR_ANY;
 
     len = sizeof(to_addr);
-
-    if (connect(sockfd, (struct sockaddr *)&to_addr, len) != 0)
-    {
-        throw runtime_error(string("connect failed: ") + strerror(errno));
-    }
 }
 
 void client_connection::startSSL()
 {
+    if (connect(sockfd, (struct sockaddr *)&to_addr, len) != 0)
+    {
+        throw runtime_error(string("connect failed: ") + strerror(errno));
+    }
     ctx = SSL_CTX_new(DTLS_client_method());
     SSL_CTX_set_min_proto_version(ctx, DTLS1_2_VERSION);
 
