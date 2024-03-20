@@ -110,7 +110,7 @@ void client_connection::startSSL()
     {
         throw runtime_error(string("connect failed: ") + strerror(errno));
     }
-    ctx = SSL_CTX_new(DTLS_client_method());
+    ctx = SSL_CTX_new(TLS_client_method());
     SSL_CTX_set_min_proto_version(ctx, DTLS1_2_VERSION);
 
     if (!SSL_CTX_load_verify_locations(ctx, "root-cert.crt", NULL))
@@ -183,6 +183,10 @@ server_connection::server_connection(uint16_t port)
 
 void server_connection::startSSL()
 {
+    // if (connect(sockfd, (struct sockaddr *)&to_addr, len) != 0)
+    // {
+    //     throw runtime_error(string("connect failed: ") + strerror(errno));
+    // }
     is_SSL = true;
     ctx = SSL_CTX_new(DTLS_server_method());
     SSL_CTX_set_min_proto_version(ctx, DTLS1_2_VERSION);
