@@ -1,74 +1,53 @@
-#include <iostream>
-// #include<unistd.h>
 #include "chat_app.hpp"
+#include <iostream>
 using namespace std;
 
-message to_message(string msg)
+#define PORT 8080
+
+connection* init_connection (bool is_server,uint16_t port,string hostname = "")
 {
-    message res;
-
-    res.hdr.type = DATA;
-    res.hdr.time = time(NULL);
-    res.body = msg;
-
-    return res;
+    if (is_server)
+    {
+        return new server_connection(port);
+    }
+    return new client_connection(hostname,port);
 }
 
-void displayMessage(message msg)
+int main(int argc,char *argv[])
 {
-    cout << "TYPE: " << msg.hdr.type << "\n";
-    cout << "TIME: " << asctime(localtime(&(msg.hdr.time)));
-    cout << "BODY:\n"
-         << msg.body << "\n";
-}
+    if (argc < 2)
+    {
+        cerr << "Enter -s or -c hostname\n";
+        return 0;
+    }
+    bool is_server;
+    string hostname;
+    if (string(argv[1]) == "-s")
+    {
+        is_server = true;
+    }
+    else if (string(argv[1]) == "-c" && argc == 3)
+    {
+        is_server = false;
+        hostname = argv[2];
+    }
+    else
+    {
+        cerr << "Enter -s or -c hostname\n";
+        return 0;
+    }
 
-int main(int argc, char *argv[])
-{
-    cout << "main.cpp\n";
-
-    connection *con = NULL;
+    connection * con = init_connection(is_server,PORT,hostname);
 
     try
     {
-        for (int i = 1; i < argc; i++)
-        {
-            if (argv[i] == string("-s"))
-            {
-                con = new server_connection(8080);
-                message msg = con->read_msg();
-                displayMessage(msg);
-                con->send_msg(to_message("hello how are you"));
-                msg = con->read_msg();
-                displayMessage(msg);
-                con->send_msg(to_message("I am good"));
-                con->startSSL();
-                displayMessage(con->read_msg());
-                con->send_msg(to_message("Yeah, finally safe"));
-                break;
-            }
-            if (argv[i] == string("-c"))
-            {
-                con = new client_connection("hostname",8080);
-                con->send_msg(to_message("hello"));
-                message msg = con->read_msg();
-                displayMessage(msg);
-                con->send_msg(to_message("I am fine, how about you?"));
-                msg = con->read_msg();
-                displayMessage(msg);
-                // sleep(5);
-                con->startSSL();
-                con->send_msg(to_message("This is encrypted"));
-                displayMessage(con->read_msg());
-                break;
-            }
-        }
+        /* Input handler - Rajiv */
     }
-    catch (const std::exception &e)
+    catch(const std::exception& e)
     {
         std::cerr << e.what() << '\n';
     }
-
+    
+    // Clean up
     delete con;
-
-    return 0;
 }

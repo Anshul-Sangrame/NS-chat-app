@@ -27,3 +27,5 @@ bool operator<(const message &a, const message &b);
 bool operator>(const message &a, const message &b);
 bool operator<=(const message &a, const message &b);
 bool operator>=(const message &a, const message &b);
+
+// Used to form message from user input string
