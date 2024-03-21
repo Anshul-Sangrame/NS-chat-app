@@ -1,6 +1,6 @@
 CXX = g++
 CXXFLAGS = -I./headers/
-LDFLAGS = -L./modules/ -lhandler -lssl -lcrypto
+LDFLAGS = -L./modules/ -lhandler -lssl -lcrypto -lpthread -lncurses
 
 .PHONY: main pre T test all clean
 
