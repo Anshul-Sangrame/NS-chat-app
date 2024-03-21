@@ -35,13 +35,12 @@ int main(int argc, char *argv[])
             if (argv[i] == string("-s"))
             {
                 con = new server_connection(8080);
-                message msg = con->read_msg();
-                displayMessage(msg);
-                con->send_msg(to_message("hello how are you"));
-                msg = con->read_msg();
-                displayMessage(msg);
-                con->send_msg(to_message("I am good"));
                 con->startSSL();
+
+                displayMessage(con->read_msg());
+                con->send_msg(to_message("hello how are you"));
+                displayMessage(con->read_msg());
+                con->send_msg(to_message("I am good"));
                 displayMessage(con->read_msg());
                 con->send_msg(to_message("Yeah, finally safe"));
                 break;
@@ -49,14 +48,12 @@ int main(int argc, char *argv[])
             if (argv[i] == string("-c"))
             {
                 con = new client_connection("hostname",8080);
-                con->send_msg(to_message("hello"));
-                message msg = con->read_msg();
-                displayMessage(msg);
-                con->send_msg(to_message("I am fine, how about you?"));
-                msg = con->read_msg();
-                displayMessage(msg);
-                // sleep(5);
                 con->startSSL();
+                
+                con->send_msg(to_message("hello"));
+                displayMessage(con->read_msg());
+                con->send_msg(to_message("I am fine, how about you?"));
+                displayMessage(con->read_msg());
                 con->send_msg(to_message("This is encrypted"));
                 displayMessage(con->read_msg());
                 break;
