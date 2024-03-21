@@ -14,3 +14,6 @@ make
 ```bash
 make clean
 ```
+
+### Pending
+- Get host address by name

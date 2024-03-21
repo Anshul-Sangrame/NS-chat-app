@@ -15,8 +15,6 @@ const char *hostname = "localhost";
 const short int port = 8080;
 /* INPUT ends */
 int sockfd;
-struct sockaddr_in to_addr = {0};
-struct sockaddr_in my_addr;
 SSL_CTX *ctx;
 SSL *ssl;
 bool is_SSL;
@@ -32,6 +30,10 @@ void create_socket()
 
 void bind_sock()
 {
+    struct sockaddr_in my_addr;
+    my_addr.sin_family = AF_INET;
+    my_addr.sin_port = htons(port);
+    my_addr.sin_addr.s_addr = INADDR_ANY;
     if (bind(sockfd, (sockaddr *)&my_addr, sizeof(my_addr)) < 0)
     {
         throw runtime_error(string("socket creation failed: ") + strerror(errno));
@@ -73,6 +75,7 @@ string recv_data()
 
 void establish_conn()
 {
+    struct sockaddr_in to_addr;
     char buff[4097];
     socklen_t len = sizeof(to_addr);
     int n;
@@ -120,7 +123,6 @@ void prepare_ctx()
 
 void prepare_ssl()
 {
-    struct timeval timeout;
     ssl = SSL_new(ctx);
     SSL_set_fd(ssl, sockfd);
 }
@@ -129,7 +131,6 @@ void startSSL()
 {
     recv_data();
     send_data("start SSL ack");
-    is_SSL = true;
     prepare_ctx();
     prepare_ssl();
 
@@ -139,6 +140,7 @@ void startSSL()
         throw runtime_error("Error in handshake");
     }
 
+    is_SSL = true;
     cout << "SSL success\n";
 }
 
@@ -147,17 +149,13 @@ int main(int argc, char *argv[])
     try
     {
         /* constructor starts */
-        my_addr.sin_family = AF_INET;
-        my_addr.sin_port = htons(port);
-        my_addr.sin_addr.s_addr = INADDR_ANY;
         is_SSL = false;
         ssl = NULL;
         ctx = NULL;
-        /* constructor ends */
-
         create_socket();
         bind_sock();
         establish_conn();
+        /* constructor ends */
 
         startSSL();
 
@@ -176,7 +174,8 @@ int main(int argc, char *argv[])
         SSL_shutdown(ssl);
         SSL_free(ssl);
     }
-    if (ctx) SSL_CTX_free(ctx);
+    if (ctx)
+        SSL_CTX_free(ctx);
     /* DESTRUCTOR ends */
 
     return 0;

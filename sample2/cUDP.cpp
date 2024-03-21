@@ -15,8 +15,6 @@ const char *hostname = "localhost";
 const short int port = 8080;
 /* INPUT ends */
 int sockfd;
-struct sockaddr_in to_addr;
-struct sockaddr_in my_addr;
 SSL_CTX *ctx;
 SSL *ssl;
 bool is_SSL;
@@ -37,10 +35,10 @@ void send_data(const string &msg)
     {
         throw runtime_error(string("socket send failed: ") + strerror(errno));
     }
-    if (is_SSL && (SSL_write_ex(ssl,msg.c_str(),msg.size(),&n)) < 0)
+    if (is_SSL && (SSL_write_ex(ssl, msg.c_str(), msg.size(), &n)) < 0)
     {
         ERR_print_errors_fp(stderr);
-        throw runtime_error("SSL socket recv failed");
+        throw runtime_error("SSL socket send failed");
     }
     cout << "SENT: " << msg << "\n";
 }
@@ -53,7 +51,7 @@ string recv_data()
     {
         throw runtime_error(string("socket recv failed: ") + strerror(errno));
     }
-    if (is_SSL && (SSL_read_ex(ssl,buff,4096,(size_t *)&n)) < 0)
+    if (is_SSL && (SSL_read_ex(ssl, buff, 4096, (size_t *)&n)) < 0)
     {
         ERR_print_errors_fp(stderr);
         throw runtime_error("SSL socket recv failed");
@@ -65,6 +63,10 @@ string recv_data()
 
 void establish_conn()
 {
+    struct sockaddr_in to_addr;
+    to_addr.sin_family = AF_INET;
+    to_addr.sin_port = htons(port);
+    to_addr.sin_addr.s_addr = INADDR_ANY;
     if (connect(sockfd, (struct sockaddr *)&to_addr, sizeof(to_addr)) < 0)
     {
         throw runtime_error(string("socket connection failed: ") + strerror(errno));
@@ -83,7 +85,8 @@ void prepare_ctx()
     }
     const char *cipher_list = "ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:TLS_AES_256_GCM_SHA384:AES256-GCM-SHA384:AES128-SHA256:AES128-SHA";
 
-    if(SSL_CTX_set_cipher_list(ctx, cipher_list) == 0) {
+    if (SSL_CTX_set_cipher_list(ctx, cipher_list) == 0)
+    {
         ERR_print_errors_fp(stderr);
         throw runtime_error("Unable to set cipher suites");
     }
@@ -99,7 +102,6 @@ void startSSL()
 {
     send_data("Start SSL");
     recv_data();
-    is_SSL = true;
     prepare_ctx();
     prepare_ssl();
 
@@ -108,6 +110,8 @@ void startSSL()
         ERR_print_errors_fp(stderr);
         throw runtime_error("Error in handshake");
     }
+
+    is_SSL = true;
     cout << "SSL success\n";
 }
 
@@ -116,9 +120,6 @@ int main(int argc, char *argv[])
     try
     {
         /* Cnstructor starts */
-        to_addr.sin_family = AF_INET;
-        to_addr.sin_port = htons(port);
-        to_addr.sin_addr.s_addr = INADDR_ANY;
         create_socket();
         establish_conn();
         is_SSL = false;
@@ -143,7 +144,8 @@ int main(int argc, char *argv[])
         SSL_shutdown(ssl);
         SSL_free(ssl);
     }
-    if (ctx) SSL_CTX_free(ctx);
+    if (ctx)
+        SSL_CTX_free(ctx);
     /* DESTRUCTOR ends */
 
     return 0;
