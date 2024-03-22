@@ -158,7 +158,7 @@ void Handler::inputHandler() {
             message msg = to_message(ui.input);
             ui.input = "";
             ui.addMessage(msg, string("you"));
-            // con->send_msg(msg);
+            con->send_msg(msg);
         }   
         else if (c==KEY_END){
             terminated = true;
@@ -183,9 +183,9 @@ void Handler::inputHandler() {
 void Handler::receiver(){
     int i = 0;
     while(!terminated){
-        // message msg = con->read_msg();
-        message msg = to_message("test"+to_string(i++));
-        sleep(4);
+        message msg = con->read_msg();
+        // message msg = to_message("test"+to_string(i++));
+        // sleep(4);
         ui.addMessage(msg, string("them"));
     }
 }

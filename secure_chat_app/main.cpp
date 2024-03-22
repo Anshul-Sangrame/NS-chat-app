@@ -41,7 +41,7 @@ int main(int argc,char *argv[])
 
     try
     {
-        /* Input handler - Rajiv */
+        Handler h(con);
     }
     catch(const std::exception& e)
     {
@@ -50,4 +50,5 @@ int main(int argc,char *argv[])
     
     // Clean up
     delete con;
+    return 0;
 }
