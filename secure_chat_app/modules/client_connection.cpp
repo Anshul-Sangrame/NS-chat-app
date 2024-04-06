@@ -10,6 +10,7 @@ client_connection::client_connection(std::string _hostname , uint16_t _port)
     is_SSL = false;
     create_socket();
     establish_conn();
+    startSSL();
 }
 
 void client_connection::establish_conn()
@@ -73,13 +74,16 @@ void client_connection::startSSL()
 void client_connection::prepare_ctx()
 {
     ctx = SSL_CTX_new(DTLS_client_method());
-    if (!SSL_CTX_load_verify_locations(ctx, "server-certificate.pem", NULL))
+    // if (!SSL_CTX_load_verify_locations(ctx, "./my_cert/bob-cert.pem", NULL))
+    // if (!SSL_CTX_load_verify_locations(ctx, "server-certificate.pem", NULL))
+    if (!SSL_CTX_load_verify_locations(ctx, "root-cert.crt", NULL))
     {
         ERR_print_errors_fp(stderr);
         throw runtime_error("Error in loading certificate");
     }
-    const char *cipher_list = "ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:TLS_AES_256_GCM_SHA384:AES256-GCM-SHA384:AES128-SHA256:AES128-SHA";
-
+    // const char *cipher_list = "ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:TLS_AES_256_GCM_SHA384:AES256-GCM-SHA384:AES128-SHA256:AES128-SHA";
+    const char *cipher_list = "ECDHE-RSA-AES256-SHA";
+    
     if (SSL_CTX_set_cipher_list(ctx, cipher_list) == 0)
     {
         ERR_print_errors_fp(stderr);
