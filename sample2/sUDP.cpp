@@ -96,21 +96,12 @@ void establish_conn()
     send_data("chat_hello ack");
 }
 
+
+
 void prepare_ctx()
 {
     ctx = SSL_CTX_new(DTLS_server_method());
     SSL_CTX_set_min_proto_version(ctx, DTLS1_2_VERSION);
-
-    if (SSL_CTX_use_certificate_file(ctx, "server-certificate.pem", SSL_FILETYPE_PEM) <= 0)
-    {
-        ERR_print_errors_fp(stderr);
-        throw runtime_error("");
-    }
-    if (SSL_CTX_use_PrivateKey_file(ctx, "server-private-key.pem", SSL_FILETYPE_PEM) <= 0)
-    {
-        ERR_print_errors_fp(stderr);
-        throw runtime_error("");
-    }
 
     const char *cipher_list = "ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:TLS_AES_256_GCM_SHA384:AES256-GCM-SHA384:AES128-SHA256:AES128-SHA";
 
@@ -118,6 +109,23 @@ void prepare_ctx()
     {
         ERR_print_errors_fp(stderr);
         throw runtime_error("Unable to set cipher suites");
+    }
+    
+     if (SSL_CTX_use_certificate_file(ctx, "bob-cert.crt", SSL_FILETYPE_PEM) <= 0)
+    {
+        ERR_print_errors_fp(stderr);
+        throw runtime_error("could not use bob-cert.crt\n");
+    }
+    if (SSL_CTX_use_PrivateKey_file(ctx, "bob-key.pem", SSL_FILETYPE_PEM) <= 0)
+    {
+        ERR_print_errors_fp(stderr);
+        throw runtime_error("could not use bob-key.pem\n");
+    }
+
+    if (!SSL_CTX_load_verify_file(ctx, "certs/cert-chain.crt"))
+    {
+        ERR_print_errors_fp(stderr);
+        throw runtime_error("Error in loading certificate");
     }
 }
 
