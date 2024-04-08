@@ -35,3 +35,5 @@ main
 .vscode/
 
 secure_chat_app_noTUI/
+Update_local.sh
+*.pcap
