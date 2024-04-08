@@ -71,22 +71,39 @@ void client_connection::startSSL()
     is_SSL = true;
 }
 
+int verify_callback(int preverify_ok, X509_STORE_CTX *ctx){
+
+    //X509_STORE* store = SSL_CTX_get_cert_store(ctx);
+   // SSL *ssl = static_cast<SSL *>(X509_STORE_CTX_get_ex_data(ctx, SSL_get_ex_data_X509_STORE_CTX_idx()));
+   // SSL_CTX *ssl_ctx = SSL_get_SSL_CTX(ssl);
+   // X509 *cert = X509_STORE_CTX_get0_cert(ctx);
+
+    if (X509_STORE_CTX_get_error_depth(ctx) == 0) {
+        return 1;
+    }
+
+    return preverify_ok;
+}
+
 void client_connection::prepare_ctx()
 {
     ctx = SSL_CTX_new(DTLS_client_method());
-    // if (!SSL_CTX_load_verify_locations(ctx, "./my_cert/bob-cert.pem", NULL))
-    // if (!SSL_CTX_load_verify_locations(ctx, "server-certificate.pem", NULL))
-    if (!SSL_CTX_load_verify_locations(ctx, "root-cert.crt", NULL))
-    {
-        ERR_print_errors_fp(stderr);
-        throw runtime_error("Error in loading certificate");
-    }
-    // const char *cipher_list = "ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:TLS_AES_256_GCM_SHA384:AES256-GCM-SHA384:AES128-SHA256:AES128-SHA";
-    const char *cipher_list = "ECDHE-RSA-AES256-SHA";
+    SSL_CTX_set_min_proto_version(ctx, DTLS1_2_VERSION);
+
+    const char *cipher_list = "ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:TLS_AES_256_GCM_SHA384:AES256-GCM-SHA384:AES128-SHA256:AES128-SHA";
     
     if (SSL_CTX_set_cipher_list(ctx, cipher_list) == 0)
     {
         ERR_print_errors_fp(stderr);
         throw runtime_error("Unable to set cipher suites");
     }
+
+    if (!SSL_CTX_load_verify_file(ctx, "trust_store/cert-chain.crt"))
+    {
+        ERR_print_errors_fp(stderr);
+        throw runtime_error("Error in loading certificate");
+    }
+
+    SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, verify_callback);
+    SSL_CTX_set_verify_depth(ctx, 4);
 }
