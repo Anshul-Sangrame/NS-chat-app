@@ -52,7 +52,7 @@ void client_connection::startSSL()
             .type = CONTROL,
             .time = time(NULL)
         },
-        .body = "CHAT_START_SSL"
+        .body = "CHAT_NO_SSL"
     };
     send_msg(start_ssl);
     message reply = read_msg();
@@ -60,22 +60,8 @@ void client_connection::startSSL()
     {
         throw runtime_error(string("SSL socket connection failed: invalid response to start_ssl"));
     }
-    if (reply.body == "CHAT_START_SSL_NOT_SUPPORTED") return;
-    if (reply.body != "CHAT_START_SSL_ACK")
-    {
-        throw runtime_error(string("SSL socket connection failed: invalid response to start_ssl"));
-    }
-
-    prepare_ctx();
-    prepare_ssl();
-
-    if (SSL_connect(ssl) != 1)
-    {
-        ERR_print_errors_fp(stderr);
-        throw runtime_error(string("SSL socket connection failed: error in handshake"));
-    }
-
-    is_SSL = true;
+    if (reply.body == "CHAT_NO_SSL_ACK") return;
+    throw runtime_error(string("SSL socket connection failed: invalid response to no_ssl"));
 }
 
 int verify_callback(int preverify_ok, X509_STORE_CTX *ctx){

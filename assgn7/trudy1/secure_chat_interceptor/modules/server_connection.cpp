@@ -39,13 +39,14 @@ void server_connection::establish_conn()
     }
 
     struct hostent *host = gethostbyaddr(&to_addr.sin_addr, sizeof(to_addr.sin_addr), AF_INET);
-    if (host == NULL) {
+    if (host == NULL)
+    {
         herror("gethostbyaddr");
         throw runtime_error("");
     }
     to_name = host->h_name;
 
-    message msg = construct_message(string(buff,n));
+    message msg = construct_message(string(buff, n));
 
     if (msg.hdr.type != CONTROL || msg.body != "CHAT_HELLO")
     {
@@ -60,10 +61,8 @@ void server_connection::establish_conn()
     message reply = {
         .hdr = {
             .type = CONTROL,
-            .time = time(NULL)
-        },
-        .body = "CHAT_OK_REPLY"
-    };
+            .time = time(NULL)},
+        .body = "CHAT_OK_REPLY"};
     send_msg(reply);
 }
 
@@ -92,7 +91,7 @@ void server_connection::prepare_ctx()
         throw runtime_error("Can't load private key");
     }
 
-    if (!SSL_CTX_load_verify_locations(ctx, "trust_store/cert-chain.crt",NULL))
+    if (!SSL_CTX_load_verify_locations(ctx, "trust_store/cert-chain.crt", NULL))
     {
         ERR_print_errors_fp(stderr);
         throw runtime_error("Error in loading certificate");
@@ -102,6 +101,16 @@ void server_connection::prepare_ctx()
 void server_connection::startSSL()
 {
     message msg = read_msg();
+    if (msg.hdr.type == CONTROL && msg.body == "CHAT_NO_SSL")
+    {
+        message reply = {
+            .hdr = {
+                .type = CONTROL,
+                .time = time(NULL)},
+            .body = "CHAT_NO_SSL_ACK"};
+        send_msg(reply);
+        return;
+    }
     if (msg.hdr.type != CONTROL || msg.body != "CHAT_START_SSL")
     {
         throw runtime_error(string("SSL socket connection failed: invalid start_ssl"));
@@ -109,20 +118,7 @@ void server_connection::startSSL()
     message reply = {
         .hdr = {
             .type = CONTROL,
-            .time = time(NULL)
-        },
-        .body = "CHAT_START_SSL_ACK"
-    };
+            .time = time(NULL)},
+        .body = "CHAT_START_SSL_NOT_SUPPORTED"};
     send_msg(reply);
-
-    prepare_ctx();
-    prepare_ssl();
-
-    if (SSL_accept(ssl) != 1)
-    {
-        ERR_print_errors_fp(stderr);
-        throw runtime_error("Error in handshake");
-    }
-
-    is_SSL = true;
 }
