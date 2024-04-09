@@ -4,44 +4,29 @@ using namespace std;
 
 #define PORT 8080
 
-connection *init_connection(bool is_server, uint16_t port, string hostname = "")
-{
-    if (is_server)
-    {
-        return new server_connection(port);
-    }
-    return new client_connection(hostname, port);
-}
-
 int main(int argc, char *argv[])
 {
-    connection *con = NULL;
+    // server <--- con1 ---> Trudy
+    connection *con1 = NULL;
+    //                       Trudy <--- con1 ---> client
+    connection *con2 = NULL;
+
     try
     {
-        if (argc < 2)
+        if (argc < 4)
         {
-            cerr << "Enter -s or -c hostname\n";
+            cerr << "Enter -d <server> <client>";
             return 0;
         }
-        bool is_server;
-        string hostname;
-        if (string(argv[1]) == "-s")
+        if (argv[1] != string("-d"))
         {
-            is_server = true;
-        }
-        else if (string(argv[1]) == "-c" && argc == 3)
-        {
-            is_server = false;
-            hostname = argv[2];
-        }
-        else
-        {
-            cerr << "Enter -s or -c hostname\n";
+            cerr << "Enter -d <server> <client>";
             return 0;
         }
-
-        con = init_connection(is_server, PORT, hostname);
-        Handler h(con);
+        con1 = new client_connection(argv[2],PORT);
+        con2 = new server_connection(PORT);
+        // Rajiv add passive handler here
+        
     }
     catch (const std::exception &e)
     {
@@ -49,6 +34,7 @@ int main(int argc, char *argv[])
     }
 
     // Clean up
-    delete con;
+    delete con1;
+    delete con2;
     return 0;
 }
