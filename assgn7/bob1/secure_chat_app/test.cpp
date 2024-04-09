@@ -35,6 +35,8 @@ void displayMessage(message msg)
 int main(int argc, char *argv[])
 {
     connection *con = NULL;
+    bool is_server;
+    string hostname;
     try
     {
         if (argc < 2)
@@ -42,8 +44,6 @@ int main(int argc, char *argv[])
             cerr << "Enter -s or -c hostname\n";
             return 0;
         }
-        bool is_server;
-        string hostname;
         if (string(argv[1]) == "-s")
         {
             is_server = true;
@@ -68,6 +68,21 @@ int main(int argc, char *argv[])
     {
         std::cerr << e.what() << '\n';
     }
+
+    delete con;
+
+    try
+    {
+        con = init_connection(is_server, PORT, hostname);
+        displayMessage(con->read_msg());
+        con->send_msg(to_message("hello sis"));
+        displayMessage(con->read_msg());
+    }
+    catch(const std::exception& e)
+    {
+        std::cerr << e.what() << '\n';
+    }
+    
 
     // Clean up
     delete con;
