@@ -32,6 +32,7 @@ protected:
 public:
     message read_msg();
     void send_msg(message);
+    message send_control(message);
     virtual void startSSL() = 0;
     ~connection();
 };

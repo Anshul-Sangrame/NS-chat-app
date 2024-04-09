@@ -14,7 +14,7 @@ string connection::read_data()
     {
         throw runtime_error(string("socket read failed: ") + strerror(errno));
     }
-    if (is_SSL && (SSL_read_ex(ssl, buffer, BUFF_SIZE, (size_t *)&n)) < 0)
+    if (is_SSL && (SSL_read_ex(ssl, buffer, BUFF_SIZE, (size_t *)&n)) <= 0)
     {
         ERR_print_errors_fp(stderr);
         throw runtime_error("SSL socket read failed");
@@ -57,7 +57,7 @@ void connection::send_data(string msg)
     {
         throw runtime_error(string("socket send failed: ") + strerror(errno));
     }
-    if (is_SSL && (SSL_write_ex(ssl, msg.c_str(), msg.size(), &n)) < 0)
+    if (is_SSL && (SSL_write_ex(ssl, msg.c_str(), msg.size(), &n)) <= 0)
     {
         ERR_print_errors_fp(stderr);
         throw runtime_error("SSL socket send failed");
@@ -67,6 +67,49 @@ void connection::send_data(string msg)
 void connection::send_msg(message msg)
 {
     send_data(messageToString(msg));
+}
+
+message connection::send_control(message message)
+{
+    send_msg(message);
+    char buffer[BUFF_SIZE];
+    int n;
+    int re_tries = 0;
+    int ret;
+
+    while (!is_SSL && (n = recv(sockfd, buffer, BUFF_SIZE, MSG_DONTWAIT)) < 0)
+    {
+        if (re_tries == 5)
+        {
+            send_msg(message);
+            continue;
+        }
+        if (errno == EAGAIN || errno == EWOULDBLOCK)
+        {
+            re_tries++;
+            sleep(1);
+            continue;
+        }
+        throw runtime_error(string("socket read failed: ") + strerror(errno));
+    }
+    while (is_SSL && (ret = SSL_read_ex(ssl, buffer, BUFF_SIZE, (size_t *)&n)) <= 0)
+    {
+        if (re_tries == 5)
+        {
+            send_msg(message);
+            continue;
+        }
+        if (SSL_get_error(ssl, ret) == SSL_ERROR_WANT_READ)
+        {
+            re_tries++;
+            sleep(1);
+            continue;
+        }
+        ERR_print_errors_fp(stderr);
+        throw runtime_error("SSL socket read failed");
+    }
+
+    return construct_message(string(buffer, n));
 }
 
 void connection::create_socket()

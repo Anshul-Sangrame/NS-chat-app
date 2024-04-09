@@ -37,10 +37,7 @@ void server_connection::establish_conn()
         throw runtime_error(string("socket connection failed: ") + strerror(errno));
     }
 
-    message msg;
-
-    msg.hdr = *(message_header *)buff;
-    msg.body.append(buff + HEADER_SIZE,n - HEADER_SIZE);
+    message msg = construct_message(string(buff,n));
 
     if (msg.hdr.type != CONTROL || msg.body != "CHAT_HELLO")
     {
