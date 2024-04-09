@@ -10,14 +10,18 @@ string connection::read_data()
 {
     char buffer[BUFF_SIZE];
     int n;
+    int ret;
 
     if (!is_SSL && (n = recv(sockfd, buffer, BUFF_SIZE, 0)) < 0)
     {
         throw runtime_error(string("socket read failed: ") + strerror(errno));
     }
-    if (is_SSL && (SSL_read_ex(ssl, buffer, BUFF_SIZE, (size_t *)&n)) <= 0)
+    if (is_SSL && (ret = SSL_read_ex(ssl, buffer, BUFF_SIZE, (size_t *)&n)) <= 0)
     {
-        ERR_print_errors_fp(stderr);
+        if (SSL_get_error(ssl,ret) == SSL_ERROR_ZERO_RETURN)
+        {
+            throw runtime_error("Connection ended by peer");
+        }
         throw runtime_error("SSL socket read failed");
     }
 
