@@ -27,6 +27,8 @@ protected:
     message construct_message(std::string);
     std::string messageToString(message);
     std::string read_data();
+    void convert_to_non_blocking();
+    void convert_to_blocking();
     void send_data(std::string);
 
 public:

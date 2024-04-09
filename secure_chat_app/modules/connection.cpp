@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <sstream>
+#include <fcntl.h>
 using namespace std;
 
 string connection::read_data()
@@ -69,19 +70,58 @@ void connection::send_msg(message msg)
     send_data(messageToString(msg));
 }
 
+void connection::convert_to_blocking()
+{
+    // Convert socket to blocking
+    int flags = fcntl(sockfd, F_GETFL, 0);
+    if (flags < 0)
+    {
+        throw runtime_error(string("Error getting socket flags: ") + strerror(errno));
+    }
+
+    // Remove the non-blocking flag
+    flags &= ~O_NONBLOCK;
+    if (fcntl(sockfd, F_SETFL, flags) < 0)
+    {
+        throw runtime_error(string("Error setting socket to blocking mode: ") + strerror(errno));
+    }
+}
+
+void connection::convert_to_non_blocking()
+{
+    // Convert socket to non-blocking
+    int flags = fcntl(sockfd, F_GETFL, 0);
+    if (flags < 0)
+    {
+        throw runtime_error(string("Error getting socket flags: ") + strerror(errno));
+    }
+
+    // Add the non-blocking flag
+    flags |= O_NONBLOCK;
+    if (fcntl(sockfd, F_SETFL, flags) < 0)
+    {
+        throw runtime_error(string("Error setting socket to non-blocking mode: ") + strerror(errno));
+    }
+}
+
 message connection::send_control(message message)
 {
-    send_msg(message);
     char buffer[BUFF_SIZE];
     int n;
     int re_tries = 0;
     int ret;
 
-    while (!is_SSL && (n = recv(sockfd, buffer, BUFF_SIZE, MSG_DONTWAIT)) < 0)
+    send_msg(message);
+    convert_to_non_blocking();
+
+    while (!is_SSL && (n = recv(sockfd, buffer, BUFF_SIZE, 0)) < 0)
     {
         if (re_tries == 5)
         {
+            convert_to_blocking();
             send_msg(message);
+            convert_to_non_blocking();
+            re_tries = 0;
             continue;
         }
         if (errno == EAGAIN || errno == EWOULDBLOCK)
@@ -96,7 +136,10 @@ message connection::send_control(message message)
     {
         if (re_tries == 5)
         {
+            convert_to_blocking();
             send_msg(message);
+            convert_to_non_blocking();
+            re_tries = 0;
             continue;
         }
         if (SSL_get_error(ssl, ret) == SSL_ERROR_WANT_READ)
@@ -109,6 +152,7 @@ message connection::send_control(message message)
         throw runtime_error("SSL socket read failed");
     }
 
+    convert_to_blocking();
     return construct_message(string(buffer, n));
 }
 
@@ -131,7 +175,7 @@ connection::~connection()
     if (is_SSL)
     {
         int res;
-        while((res = SSL_shutdown(ssl)) != 1)
+        while ((res = SSL_shutdown(ssl)) != 1)
         {
             if (res < 0)
             {
