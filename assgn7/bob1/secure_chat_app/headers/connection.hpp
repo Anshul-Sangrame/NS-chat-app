@@ -23,6 +23,7 @@ protected:
     virtual void establish_conn() = 0;
     void prepare_ctx();
     void prepare_ssl();
+    // virtual void session_handler() = 0;
 
     message construct_message(std::string);
     std::string messageToString(message);
@@ -46,7 +47,7 @@ class client_connection : public connection
 private:
     void establish_conn();
     void startSSL();
-    void session_handler();
+    // void session_handler();
 
 public:
     client_connection(std::string _hostname, uint16_t _port);
@@ -58,8 +59,7 @@ private:
     void bind_sock();
     void establish_conn();
     void startSSL();
-    void session_get_from_file();
-    void session_store_in_file();
+    // void session_handler();
 
 public:
     server_connection(uint16_t _port);

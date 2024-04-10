@@ -68,6 +68,15 @@ int main(int argc, char *argv[])
     {
         std::cerr << e.what() << '\n';
     }    
+    delete con;
+    try
+    {
+
+    }
+    catch (const std::exception &e)
+    {
+        std::cerr << e.what() << '\n';
+    }  
 
     // Clean up
     delete con;

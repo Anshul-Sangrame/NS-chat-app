@@ -46,9 +46,9 @@ class client_connection : public connection
 private:
     void establish_conn();
     void startSSL();
-    void session_handler();
-    void session_get_from_file();
-    void session_store_in_file();
+    // void session_handler();
+    // void session_get_from_file();
+    // void session_store_in_file();
 
 public:
     client_connection(std::string _hostname, uint16_t _port);

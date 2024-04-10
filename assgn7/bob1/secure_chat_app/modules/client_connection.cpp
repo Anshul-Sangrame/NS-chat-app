@@ -45,10 +45,11 @@ void client_connection::establish_conn()
     }
 }
 
-void client_connection::session_handler()
-{
-    // handles client side session
-}
+// void client_connection::session_handler()
+// {
+//     // handles client side session
+    
+// }
 
 void client_connection::startSSL()
 {

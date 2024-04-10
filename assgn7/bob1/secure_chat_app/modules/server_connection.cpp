@@ -41,13 +41,14 @@ void server_connection::establish_conn()
     }
 
     struct hostent *host = gethostbyaddr(&to_addr.sin_addr, sizeof(to_addr.sin_addr), AF_INET);
-    if (host == NULL) {
+    if (host == NULL)
+    {
         herror("gethostbyaddr");
         throw runtime_error("");
     }
     to_name = host->h_name;
 
-    message msg = construct_message(string(buff,n));
+    message msg = construct_message(string(buff, n));
 
     if (msg.hdr.type != CONTROL || msg.body != "CHAT_HELLO")
     {
@@ -62,35 +63,52 @@ void server_connection::establish_conn()
     message reply = {
         .hdr = {
             .type = CONTROL,
-            .time = time(NULL)
-        },
-        .body = "CHAT_OK_REPLY"
-    };
+            .time = time(NULL)},
+        .body = "CHAT_OK_REPLY"};
     send_msg(reply);
 }
 
-void server_connection::session_get_from_file()
-{
-    FILE *fp = fopen("session/sess.dat","rb");
-    unsigned char *bytes = new unsigned char[SESSION_SIZE];
-    int len = fread(bytes,1,SESSION_SIZE,fp);
-    if (len == 0) return;
-    session = d2i_SSL_SESSION(NULL,(const unsigned char **)&bytes,len);
-    SSL_set_session(ssl,session);
-    fclose(fp);
-    // delete[] bytes;
-}
+// void server_connection::session_get_from_file()
+// {
+//     FILE *fp = fopen("session/sess.dat", "rb");
+//     unsigned char *bytes = new unsigned char[SESSION_SIZE];
+//     int len = fread(bytes, 1, SESSION_SIZE, fp);
+//     if (len == 0)
+//         return;
+//     session = d2i_SSL_SESSION(NULL, (const unsigned char **)&bytes, len);
+//     SSL_set_session(ssl, session);
+//     fclose(fp);
+//     // delete[] bytes;
+// }
 
-void server_connection::session_store_in_file()
-{
-    session = SSL_get0_session(ssl);
-    FILE *fp = fopen("session/sess.dat","wb");
-    unsigned char *bytes = NULL;
-    int len = i2d_SSL_SESSION(session,&bytes);
-    if (len < 0) throw runtime_error("Error in session store in file");
-    fwrite(bytes,1,len,fp);
-    fclose(fp);
-}
+// void server_connection::session_store_in_file()
+// {
+//     session = SSL_get0_session(ssl);
+//     FILE *fp = fopen("session/sess.dat", "wb");
+//     unsigned char *bytes = NULL;
+//     int len = i2d_SSL_SESSION(session, &bytes);
+//     if (len < 0)
+//         throw runtime_error("Error in session store in file");
+//     fwrite(bytes, 1, len, fp);
+//     fclose(fp);
+// }
+
+// SSL_TICKET_RETURN dec_cb(
+//     SSL *s,
+//     SSL_SESSION *ss,
+//     const unsigned char *keyname,
+//     size_t keyname_len,
+//     SSL_TICKET_STATUS status,
+//     void *arg)
+// {
+//     unsigned int len;
+//     const unsigned char * id = SSL_SESSION_get_id(ss,&len);
+// }
+
+// void server_connection::session_handler()
+// {
+//     SSL_CTX_set_session_ticket_cb(ctx, NULL, dec_cb, NULL);
+// }
 
 void server_connection::startSSL()
 {
@@ -99,16 +117,14 @@ void server_connection::startSSL()
     {
         throw runtime_error(string("SSL socket connection failed: Non control message recieved"));
     }
-    
+
     if (msg.body == "CHAT_NO_SSL")
     {
         message reply = {
-        .hdr = {
-            .type = CONTROL,
-            .time = time(NULL)
-        },
-        .body = "CHAT_NO_SSL_ACK"
-        };
+            .hdr = {
+                .type = CONTROL,
+                .time = time(NULL)},
+            .body = "CHAT_NO_SSL_ACK"};
         send_msg(reply);
         return;
     }
@@ -121,24 +137,20 @@ void server_connection::startSSL()
     message reply = {
         .hdr = {
             .type = CONTROL,
-            .time = time(NULL)
-        },
-        .body = "CHAT_START_SSL_ACK"
-    };
+            .time = time(NULL)},
+        .body = "CHAT_START_SSL_ACK"};
     send_msg(reply);
 
     prepare_ctx();
     prepare_ssl();
 
-    session_get_from_file();
+    // session = SSL_get0_session(ssl);
 
     if (SSL_accept(ssl) != 1)
     {
         ERR_print_errors_fp(stderr);
         throw runtime_error("Error in handshake");
     }
-
-    session_store_in_file();
 
     is_SSL = true;
 }
