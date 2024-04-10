@@ -18,7 +18,7 @@ string connection::read_data()
     }
     if (is_SSL && (ret = SSL_read_ex(ssl, buffer, BUFF_SIZE, (size_t *)&n)) <= 0)
     {
-        if (SSL_get_error(ssl,ret) == SSL_ERROR_ZERO_RETURN)
+        if (SSL_get_error(ssl, ret) == SSL_ERROR_ZERO_RETURN)
         {
             throw runtime_error("Connection ended by peer");
         }
@@ -168,14 +168,16 @@ void connection::create_socket()
     }
 }
 
-int verify_callback(int preverify_ok, X509_STORE_CTX *ctx){
+int verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
+{
 
-    //X509_STORE* store = SSL_CTX_get_cert_store(ctx);
-   // SSL *ssl = static_cast<SSL *>(X509_STORE_CTX_get_ex_data(ctx, SSL_get_ex_data_X509_STORE_CTX_idx()));
-   // SSL_CTX *ssl_ctx = SSL_get_SSL_CTX(ssl);
-   // X509 *cert = X509_STORE_CTX_get0_cert(ctx);
+    // X509_STORE* store = SSL_CTX_get_cert_store(ctx);
+    // SSL *ssl = static_cast<SSL *>(X509_STORE_CTX_get_ex_data(ctx, SSL_get_ex_data_X509_STORE_CTX_idx()));
+    // SSL_CTX *ssl_ctx = SSL_get_SSL_CTX(ssl);
+    // X509 *cert = X509_STORE_CTX_get0_cert(ctx);
 
-    if (X509_STORE_CTX_get_error_depth(ctx) == 0) {
+    if (X509_STORE_CTX_get_error_depth(ctx) == 0)
+    {
         return 1;
     }
 
@@ -188,7 +190,7 @@ void connection::prepare_ctx()
     SSL_CTX_set_min_proto_version(ctx, DTLS1_2_VERSION);
 
     const char *cipher_list = "ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:TLS_AES_256_GCM_SHA384:AES256-GCM-SHA384:AES128-SHA256:AES128-SHA";
-    
+
     if (SSL_CTX_set_cipher_list(ctx, cipher_list) == 0)
     {
         ERR_print_errors_fp(stderr);
@@ -207,7 +209,7 @@ void connection::prepare_ctx()
         throw runtime_error("Can't load private key");
     }
 
-    if (!SSL_CTX_load_verify_locations(ctx, "trust_store/cert-chain.crt",NULL))
+    if (!SSL_CTX_load_verify_locations(ctx, "trust_store/cert-chain.crt", NULL))
     {
         ERR_print_errors_fp(stderr);
         throw runtime_error("Error in loading certificate");
@@ -215,6 +217,8 @@ void connection::prepare_ctx()
 
     SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, verify_callback);
     SSL_CTX_set_verify_depth(ctx, 4);
+
+    // SSL_CTX_set_session_ticket_cb(ctx, NULL, , NULL);
 }
 
 void connection::prepare_ssl()
@@ -242,19 +246,18 @@ void connection::stop()
 
 connection::~connection()
 {
+    stop();
     if (is_SSL)
     {
-        int res;
-        // SSL_shutdown(ssl);
-        // SSL_shutdown(ssl);
-        while ((res = SSL_shutdown(ssl)) != 1)
-        {
-            if (res < 0)
-            {
-                ERR_print_errors_fp(stderr);
-                break;
-            }
-        }
+        // int res;
+        // while ((res = SSL_shutdown(ssl)) != 1)
+        // {
+        //     if (res < 0)
+        //     {
+        //         ERR_print_errors_fp(stderr);
+        //         break;
+        //     }
+        // }
         SSL_free(ssl);
         SSL_CTX_free(ctx);
     }

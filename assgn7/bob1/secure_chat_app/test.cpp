@@ -69,11 +69,11 @@ int main(int argc, char *argv[])
         std::cerr << e.what() << '\n';
     }
 
-    delete con;
+    // delete con;
 
     try
     {
-        con = init_connection(is_server, PORT, hostname);
+        // con = init_connection(is_server, PORT, hostname);
         displayMessage(con->read_msg());
         con->send_msg(to_message("hello sis"));
         displayMessage(con->read_msg());

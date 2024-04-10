@@ -240,25 +240,24 @@ void connection::stop()
         }
     }
     close(sockfd);
-
-    throw runtime_error("Closed");
 }
 
 connection::~connection()
 {
+    stop();
     if (is_SSL)
     {
-        int res;
-        while ((res = SSL_shutdown(ssl)) != 1)
-        {
-            if (res < 0)
-            {
-                ERR_print_errors_fp(stderr);
-                break;
-            }
-        }
+        // int res;
+        // while ((res = SSL_shutdown(ssl)) != 1)
+        // {
+        //     if (res < 0)
+        //     {
+        //         ERR_print_errors_fp(stderr);
+        //         break;
+        //     }
+        // }
         SSL_free(ssl);
         SSL_CTX_free(ctx);
     }
-    close(sockfd);
+    // close(sockfd);
 }
