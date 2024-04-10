@@ -67,22 +67,7 @@ int main(int argc, char *argv[])
     catch (const std::exception &e)
     {
         std::cerr << e.what() << '\n';
-    }
-
-    // delete con;
-
-    try
-    {
-        // con = init_connection(is_server, PORT, hostname);
-        displayMessage(con->read_msg());
-        con->send_msg(to_message("hello sis"));
-        displayMessage(con->read_msg());
-    }
-    catch(const std::exception& e)
-    {
-        std::cerr << e.what() << '\n';
-    }
-    
+    }    
 
     // Clean up
     delete con;

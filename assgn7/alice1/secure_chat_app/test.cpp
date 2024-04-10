@@ -63,23 +63,8 @@ int main(int argc, char *argv[])
         con = init_connection(is_server, PORT, hostname);
         con->send_msg(to_message("hello bro"));
         displayMessage(con->read_msg());
-        con->stop();
     }
     catch (const std::exception &e)
-    {
-        std::cerr << e.what() << '\n';
-    }
-
-    // delete con;
-
-    try
-    {
-        // con = init_connection(is_server, PORT, hostname);
-        con->startSSL();
-        con->send_msg(to_message("hello bro"));
-        displayMessage(con->read_msg());
-    }
-    catch(const std::exception& e)
     {
         std::cerr << e.what() << '\n';
     }

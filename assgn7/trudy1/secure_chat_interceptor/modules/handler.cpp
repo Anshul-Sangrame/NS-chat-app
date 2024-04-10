@@ -258,7 +258,7 @@ void PassiveHandler::receiver(connection* c1, connection* c2){
         // message msg = c1->read_msg();
         // c2->send_msg(msg);                       // need to change headers?
         message msg = to_message("test"+to_string(i++));
-        sleep(2);
+        sleep(4);
         ui.addMessage(msg, string("them"), CHAT_WHITE);
     }
 }
@@ -303,7 +303,7 @@ void ActiveHandler::receiver(connection* c1, connection* c2){
     // string from_name = c1->to_name;
     string from_name = c1 ==nullptr? "alice": "bob";
     while(!terminated){
-        sleep(2);
+        sleep(4);
         message msg = to_message("test"+to_string(i++));    // dummy 
         // message msg = c1->read_msg();
         if(drop_packets){
@@ -323,47 +323,64 @@ void ActiveHandler::inputHandler(connection* c1, connection* c2) {
     ui.setInputPrefix("As "+fake_name+": ");
 
     while (!terminated) {
-        int c = wgetch(stdscr);       
-
-        if(c=='\n'){
+      int c = wgetch(stdscr);       
+      switch (c) {
+        case '\n': {
             message msg = to_message(ui.input);
             ui.input = "";
             ui.addMessage(msg, fake_name, CHAT_GREEN);  // fake messages
 
             // TODO logic to decide which connection to use (not equals fake_name)
             // c1->send_msg(msg);
-        }   
-        else if (c==KEY_END){
+            break;
+        }
+        case KEY_END: {
             terminated = true;
-        }      
-        else if (c==KEY_DOWN){
+            break;
+        }
+        case KEY_DOWN: {
             ui.scrollMessages(1);
             ui.draw_screen(); 
-        } 
-        else if (c==KEY_UP){
+            break;
+        }
+        case KEY_UP: {
             ui.scrollMessages(-1);
             ui.draw_screen(); 
-        }             
-        else if (c==KEY_RESIZE){
-            ui.draw_screen();
+            break;
         }
-        else if (c==KEY_RIGHT){
+        case KEY_RESIZE: {
+            ui.draw_screen();
+            break;
+        }
+        case KEY_RIGHT: {
             if(ui.copyMessage(temp_msg, fake_name) == 0){
                 ui.input = temp_msg.body;
                 ui.setInputPrefix("As "+fake_name+": ");
                 ui.draw_screen();
             }
-            else {
-                string from_name = from_name =="alice"? "bob": "alice" ;
-                ; // TODO toggle sender
-            }
+            break;
         }
-        else if (c==KEY_LEFT){
-            drop_packets = !drop_packets; // toggle mode
+        case KEY_LEFT: {
+            fake_name = fake_name == "alice" ? "bob" : "alice" ;
+            // TODO toggle sender
+            ui.setInputPrefix("As "+fake_name+": ");
+            ui.draw_screen();
+            break;
         }
-        else {
+        case KEY_NPAGE: {
+            drop_packets = true; // pg up = packets dropped
+            break;
+        }
+        case KEY_PPAGE: {
+            drop_packets = false; // pg down = packets repeated
+            break;
+        }
+        default: {
             ui.displayInputChar(c);
+            break;
         }
+      }
+
     }
 }
 
@@ -379,6 +396,6 @@ ActiveHandler::ActiveHandler(connection* c1, connection* c2){
 int main(){
         // Handler h(nullptr);
         // PassiveHandler h(nullptr, nullptr);
-        ActiveHandler h((connection*)(long)2, nullptr);
+        ActiveHandler h((connection*)(long)1, nullptr);
         return 0;
 }
