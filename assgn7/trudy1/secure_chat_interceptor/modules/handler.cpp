@@ -199,62 +199,62 @@ void Display::setInputPrefix(string prefix){
 
 /* HOST HANDLER */
 
-void Handler::inputHandler() {
-    while (!terminated) {
-        int c = wgetch(stdscr);       
+// void Handler::inputHandler() {
+//     while (!terminated) {
+//         int c = wgetch(stdscr);       
 
-        switch (c) {
-            case '\n': {
-                message msg = to_message(ui.input);
-                ui.input = "";
-                ui.addMessage(msg, string("you"), CHAT_GREEN);
-                // con->send_msg(msg);
-                break;
-            }
-            case KEY_END: {
-                terminated = true;
-                break;
-            }
-            case KEY_DOWN: {
-                ui.scrollMessages(1);
-                ui.draw_screen(); 
-                break;
-            }
-            case KEY_UP: {
-                ui.scrollMessages(-1);
-                ui.draw_screen(); 
-                break;
-            }
-            case KEY_RESIZE: {
-                ui.draw_screen();
-                break;
-            }
-            default: {
-                ui.displayInputChar(c);
-                break;
-            }
-        }
+//         switch (c) {
+//             case '\n': {
+//                 message msg = to_message(ui.input);
+//                 ui.input = "";
+//                 ui.addMessage(msg, string("you"), CHAT_GREEN);
+//                 con->send_msg(msg);
+//                 break;
+//             }
+//             case KEY_END: {
+//                 terminated = true;
+//                 break;
+//             }
+//             case KEY_DOWN: {
+//                 ui.scrollMessages(1);
+//                 ui.draw_screen(); 
+//                 break;
+//             }
+//             case KEY_UP: {
+//                 ui.scrollMessages(-1);
+//                 ui.draw_screen(); 
+//                 break;
+//             }
+//             case KEY_RESIZE: {
+//                 ui.draw_screen();
+//                 break;
+//             }
+//             default: {
+//                 ui.displayInputChar(c);
+//                 break;
+//             }
+//         }
 
-    }
-}
+//     }
+// }
 
-void Handler::receiver(){
-    int i = 0;
-    while(!terminated){
-        // message msg = con->read_msg();
-        message msg = to_message("test"+to_string(i++));
-        sleep(4);
-        ui.addMessage(msg, string("them"), CHAT_WHITE);     // EDIT
-    }
-}
+// void Handler::receiver(){
+//     int i = 0;
+//     while(!terminated){
+//         message msg = con->read_msg();
+//         // message msg = to_message("test"+to_string(i++));
+//         sleep(4);
+//         ui.addMessage(msg, con->to_addr, CHAT_WHITE);     // EDIT
+//     }
+// }
 
-Handler::Handler(connection* c){ 
-    ui.setMode(HOST);
-    con = c;
-    inputThread = std::thread(&Handler::receiver, this);
-    inputHandler();
-    inputThread.join();
-}
+// Handler::Handler(connection* c){ 
+//     ui.setMode(HOST);
+//     con = c;
+//     inputThread = std::thread(&Handler::receiver, this);
+//     inputHandler();
+//     inputThread.join();
+// }
 
 
 
@@ -335,7 +335,7 @@ void ActiveHandler::receiver(connection* c1, connection* c2){
 
 void ActiveHandler::inputHandler(connection* c1, connection* c2) {
     message temp_msg;
-    string to_name = c1->to_name;   
+    string fake_name = c1->to_name;   
     // string fake_name = c1 ==nullptr? "alice": "bob";   // TESTING init name
     ui.setInputPrefix("As "+fake_name+": ");
 
@@ -346,9 +346,11 @@ void ActiveHandler::inputHandler(connection* c1, connection* c2) {
             message msg = to_message(ui.input);
             ui.input = "";
             ui.addMessage(msg, fake_name, CHAT_GREEN);  // fake messages
-
-            // TODO logic to decide which connection to use (not equals fake_name)
-            // c1->send_msg(msg);
+            // logic to decide which connection to use (not equals fake_name)
+            if(c1->to_name == fake_name)
+                c2->send_msg(msg);
+            else if(c2->to_name == fake_name)
+                c1->send_msg(msg);
             break;
         }
         case KEY_END: {
@@ -369,7 +371,7 @@ void ActiveHandler::inputHandler(connection* c1, connection* c2) {
             ui.draw_screen();
             break;
         }
-        case KEY_RIGHT: {
+        case KEY_RIGHT: {   // copy bottom message to input box
             if(ui.copyMessage(temp_msg, fake_name) == 0){
                 ui.input = temp_msg.body;
                 ui.setInputPrefix("As "+fake_name+": ");
@@ -377,19 +379,18 @@ void ActiveHandler::inputHandler(connection* c1, connection* c2) {
             }
             break;
         }
-        case KEY_LEFT: {
-            fake_name = fake_name == "alice" ? "bob" : "alice" ;
-            // TODO toggle sender
+        case KEY_LEFT: {     // toggle sender 
+            fake_name = (fake_name == c1->to_name) ? c2->to_name : c1->to_name ;
             ui.setInputPrefix("As "+fake_name+": ");
             ui.draw_screen();
             break;
         }
-        case KEY_NPAGE: {
-            drop_packets = true; // pg up = packets dropped
+        case KEY_NPAGE: {    // pg up = packets dropped
+            drop_packets = true;
             break;
         }
-        case KEY_PPAGE: {
-            drop_packets = false; // pg down = packets repeated
+        case KEY_PPAGE: {   // pg down = packets repeated
+            drop_packets = false; 
             break;
         }
         default: {

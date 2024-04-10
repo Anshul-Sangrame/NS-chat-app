@@ -18,17 +18,18 @@ int main(int argc, char *argv[])
             cerr << "Enter -d <server> <client>";
             return 0;
         }
-        if (argv[1] != string("-d"))
-        {
-            cerr << "Enter -d <server> <client>";
-            return 0;
-        }
+        
         con1 = new client_connection(argv[2],PORT);
         con2 = new server_connection(PORT);
-        // Rajiv add passive handler here
-        cerr << "reaching";
-        PassiveHandler h(con1,con2);
-        
+
+        if (argv[1] == string("-d") )
+        {
+            PassiveHandler h(con1,con2);
+        }
+        if (argv[1] == string("-m"))
+        {
+            ActiveHandler h(con1,con2);
+        }
     }
     catch (const std::exception &e)
     {
