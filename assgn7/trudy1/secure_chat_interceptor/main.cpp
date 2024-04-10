@@ -3,8 +3,6 @@
 using namespace std;
 
 #define PORT 8080
-#define PORT 8081
-
 
 int main(int argc, char *argv[])
 {
@@ -30,7 +28,6 @@ int main(int argc, char *argv[])
         // Rajiv add passive handler here
         cerr << "reaching";
         PassiveHandler h(con1,con2);
-        
         
     }
     catch (const std::exception &e)

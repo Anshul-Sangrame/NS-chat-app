@@ -203,29 +203,38 @@ void Handler::inputHandler() {
     while (!terminated) {
         int c = wgetch(stdscr);       
 
-        if(c=='\n'){
-            message msg = to_message(ui.input);
-            ui.input = "";
-            ui.addMessage(msg, string("you"), CHAT_GREEN);
-            // con->send_msg(msg);
-        }   
-        else if (c==KEY_END){
-            terminated = true;
-        }      
-        else if (c==KEY_DOWN){
-            ui.scrollMessages(1);
-            ui.draw_screen(); 
-        } 
-        else if (c==KEY_UP){
-            ui.scrollMessages(-1);
-            ui.draw_screen(); 
-        }             
-        else if (c==KEY_RESIZE){
-            ui.draw_screen();
+        switch (c) {
+            case '\n': {
+                message msg = to_message(ui.input);
+                ui.input = "";
+                ui.addMessage(msg, string("you"), CHAT_GREEN);
+                // con->send_msg(msg);
+                break;
+            }
+            case KEY_END: {
+                terminated = true;
+                break;
+            }
+            case KEY_DOWN: {
+                ui.scrollMessages(1);
+                ui.draw_screen(); 
+                break;
+            }
+            case KEY_UP: {
+                ui.scrollMessages(-1);
+                ui.draw_screen(); 
+                break;
+            }
+            case KEY_RESIZE: {
+                ui.draw_screen();
+                break;
+            }
+            default: {
+                ui.displayInputChar(c);
+                break;
+            }
         }
-        else {
-            ui.displayInputChar(c);
-        }
+
     }
 }
 
@@ -254,12 +263,13 @@ Handler::Handler(connection* c){
 
 void PassiveHandler::receiver(connection* c1, connection* c2){
     int i = 0;
+    string sender_name = c1->to_name;  // "them"
     while(!terminated){
-        // message msg = c1->read_msg();
-        // c2->send_msg(msg);                       // need to change headers?
-        message msg = to_message("test"+to_string(i++));
-        sleep(4);
-        ui.addMessage(msg, string("them"), CHAT_WHITE);
+        // message msg = to_message("test"+to_string(i++));
+        // sleep(4);
+        message msg = c1->read_msg();
+        c2->send_msg(msg);
+        ui.addMessage(msg, string(sender_name), CHAT_WHITE);
     }
 }
 
@@ -267,20 +277,27 @@ void PassiveHandler::inputHandler() {
     while (!terminated) {
         int c = wgetch(stdscr);       
 
-        if (c==KEY_END){
-            terminated = true;
-        }      
-        else if (c==KEY_DOWN){
-            ui.scrollMessages(1);
-            ui.draw_screen(); 
-        } 
-        else if (c==KEY_UP){
-            ui.scrollMessages(-1);
-            ui.draw_screen(); 
-        }             
-        else if (c==KEY_RESIZE){
-            ui.draw_screen();
+        switch (c) {
+            case KEY_END: {
+                terminated = true;
+                break;
+            }
+            case KEY_DOWN: {
+                ui.scrollMessages(1);
+                ui.draw_screen(); 
+                break;
+            }
+            case KEY_UP: {
+                ui.scrollMessages(-1);
+                ui.draw_screen(); 
+                break;
+            }
+            case KEY_RESIZE: {
+                ui.draw_screen();
+                break;
+            }
         }
+
     }
 }
 
@@ -301,16 +318,16 @@ PassiveHandler::PassiveHandler(connection* c1, connection* c2){
 void ActiveHandler::receiver(connection* c1, connection* c2){
     int i = 0;
     // string from_name = c1->to_name;
-    string from_name = c1 ==nullptr? "alice": "bob";
+    string from_name = c1->to_name;     // check for correctness
     while(!terminated){
-        sleep(4);
-        message msg = to_message("test"+to_string(i++));    // dummy 
-        // message msg = c1->read_msg();
+        // sleep(4);
+        // message msg = to_message("test"+to_string(i++));    // TESTING 
+        message msg = c1->read_msg();
         if(drop_packets){
             ui.addMessage(msg, from_name, CHAT_RED);
         }
         else {
-            ; // c2->send_msg(msg);
+            c2->send_msg(msg);
             ui.addMessage(msg, from_name, CHAT_WHITE);
         }
     }
@@ -318,8 +335,8 @@ void ActiveHandler::receiver(connection* c1, connection* c2){
 
 void ActiveHandler::inputHandler(connection* c1, connection* c2) {
     message temp_msg;
-    // string to_name = c1->to_name;    // TODO init name
-    string fake_name = c1 ==nullptr? "alice": "bob"; 
+    string to_name = c1->to_name;   
+    // string fake_name = c1 ==nullptr? "alice": "bob";   // TESTING init name
     ui.setInputPrefix("As "+fake_name+": ");
 
     while (!terminated) {
