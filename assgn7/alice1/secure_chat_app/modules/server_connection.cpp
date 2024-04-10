@@ -67,10 +67,20 @@ void server_connection::establish_conn()
     send_msg(reply);
 }
 
+void server_connection::session_handler()
+{
+    // handles server side session
+}
+
 void server_connection::startSSL()
 {
     message msg = read_msg();
-    if (msg.hdr.type == CONTROL && msg.body == "CHAT_NO_SSL")
+    if (msg.hdr.type != CONTROL)
+    {
+        throw runtime_error(string("SSL socket connection failed: Non control message recieved"));
+    }
+    
+    if (msg.body == "CHAT_NO_SSL")
     {
         message reply = {
         .hdr = {
@@ -82,10 +92,12 @@ void server_connection::startSSL()
         send_msg(reply);
         return;
     }
-    if (msg.hdr.type != CONTROL || msg.body != "CHAT_START_SSL")
+
+    if (msg.body != "CHAT_START_SSL")
     {
         throw runtime_error(string("SSL socket connection failed: invalid start_ssl"));
     }
+
     message reply = {
         .hdr = {
             .type = CONTROL,

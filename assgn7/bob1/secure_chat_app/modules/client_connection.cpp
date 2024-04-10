@@ -45,6 +45,11 @@ void client_connection::establish_conn()
     }
 }
 
+void client_connection::session_handler()
+{
+    // handles client side session
+}
+
 void client_connection::startSSL()
 {
     message start_ssl = {
@@ -58,7 +63,7 @@ void client_connection::startSSL()
     message reply = read_msg();
     if (reply.hdr.type != CONTROL)
     {
-        throw runtime_error(string("SSL socket connection failed: invalid response to start_ssl"));
+        throw runtime_error(string("SSL socket connection failed: Non control message recieved"));
     }
     if (reply.body == "CHAT_START_SSL_NOT_SUPPORTED") return;
     if (reply.body != "CHAT_START_SSL_ACK")

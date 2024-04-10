@@ -4,6 +4,7 @@
 #include <string.h>
 #include <sstream>
 #include <fcntl.h>
+#include "cert_locations.hpp"
 using namespace std;
 
 string connection::read_data()
@@ -197,19 +198,19 @@ void connection::prepare_ctx()
         throw runtime_error("Unable to set cipher suites");
     }
 
-    if (SSL_CTX_use_certificate_file(ctx, "my_cert/bob-cert.crt", SSL_FILETYPE_PEM) <= 0)
+    if (SSL_CTX_use_certificate_file(ctx, CERT_LOC, SSL_FILETYPE_PEM) <= 0)
     {
         ERR_print_errors_fp(stderr);
         throw runtime_error("Can't load certificate");
     }
 
-    if (SSL_CTX_use_PrivateKey_file(ctx, "my_cert/bob-key.pem", SSL_FILETYPE_PEM) <= 0)
+    if (SSL_CTX_use_PrivateKey_file(ctx, PRIVATE_KEY_LOC, SSL_FILETYPE_PEM) <= 0)
     {
         ERR_print_errors_fp(stderr);
         throw runtime_error("Can't load private key");
     }
 
-    if (!SSL_CTX_load_verify_locations(ctx, "trust_store/cert-chain.crt", NULL))
+    if (!SSL_CTX_load_verify_locations(ctx, CERT_CHAIN_LOC, NULL))
     {
         ERR_print_errors_fp(stderr);
         throw runtime_error("Error in loading certificate");
@@ -218,6 +219,7 @@ void connection::prepare_ctx()
     SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, verify_callback);
     SSL_CTX_set_verify_depth(ctx, 4);
 
+    session_handler();
     // SSL_CTX_set_session_ticket_cb(ctx, NULL, , NULL);
 }
 

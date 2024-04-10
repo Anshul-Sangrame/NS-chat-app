@@ -8,7 +8,7 @@ int main(int argc, char *argv[])
 {
     // server <--- con1 ---> Trudy
     connection *con1 = NULL;
-    //                       Trudy <--- con1 ---> client
+    //                       Trudy <--- con2 ---> client
     connection *con2 = NULL;
 
     try
