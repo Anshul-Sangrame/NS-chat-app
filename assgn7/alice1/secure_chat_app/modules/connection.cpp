@@ -219,7 +219,6 @@ void connection::prepare_ctx()
     SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, verify_callback);
     SSL_CTX_set_verify_depth(ctx, 4);
 
-    session_handler();
     // SSL_CTX_set_session_ticket_cb(ctx, NULL, , NULL);
 }
 

@@ -4,11 +4,14 @@
 #include <netdb.h>
 using namespace std;
 
+#define SESSION_SIZE 10000
+
 client_connection::client_connection(std::string _to_name , uint16_t _port)
 {
     to_name = _to_name;
     port = _port;
     is_SSL = false;
+    session = NULL;
     create_socket();
     establish_conn();
     startSSL();
@@ -45,9 +48,27 @@ void client_connection::establish_conn()
     }
 }
 
-void client_connection::session_handler()
+void client_connection::session_get_from_file()
 {
-    // handles client side session
+    FILE *fp = fopen("session/sess.dat","rb");
+    unsigned char *bytes = new unsigned char[SESSION_SIZE];
+    int len = fread(bytes,1,SESSION_SIZE,fp);
+    if (len == 0) return;
+    session = d2i_SSL_SESSION(NULL,(const unsigned char **)&bytes,len);
+    SSL_set_session(ssl,session);
+    fclose(fp);
+    // delete[] bytes;
+}
+
+void client_connection::session_store_in_file()
+{
+    session = SSL_get0_session(ssl);
+    FILE *fp = fopen("session/sess.dat","wb");
+    unsigned char *bytes = NULL;
+    int len = i2d_SSL_SESSION(session,&bytes);
+    if (len < 0) throw runtime_error("Error in session store in file");
+    fwrite(bytes,1,len,fp);
+    fclose(fp);
 }
 
 void client_connection::startSSL()
@@ -74,11 +95,15 @@ void client_connection::startSSL()
     prepare_ctx();
     prepare_ssl();
 
+    session_get_from_file();
+
     if (SSL_connect(ssl) != 1)
     {
         ERR_print_errors_fp(stderr);
         throw runtime_error(string("SSL socket connection failed: error in handshake"));
     }
+
+    session_store_in_file();
 
     is_SSL = true;
 }
