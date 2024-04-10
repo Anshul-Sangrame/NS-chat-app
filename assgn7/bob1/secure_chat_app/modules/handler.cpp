@@ -162,7 +162,6 @@ void Handler::inputHandler() {
         }   
         else if (c==KEY_END){
             terminated = true;
-            con->stop();
         }      
         else if (c==KEY_DOWN){
             ui.scrollMessages(1);
