@@ -8,7 +8,7 @@ make
 # for server
 ./main -s
 # for client
-./main -c <hostname>
+./main -c <server-hostname>
 ```
 ### Removing all binaries
 ```bash

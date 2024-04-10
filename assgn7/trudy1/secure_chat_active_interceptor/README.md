@@ -2,14 +2,7 @@
 NS chat app
 
 ## General instruction
-### For testing
-```bash
-make test
-# for server
-./main -s
-# for client
-./main -c
-```
+
 ### Removing all binaries
 ```bash
 make clean
@@ -21,12 +14,17 @@ make
 # for server
 ./main -s
 # for client
-./main -c hostname
-```
-### Removing all binaries
-```bash
-make clean
+./main -c <server-hostname>
+# for active interceptor
+./main -d <server-hostname> <client-hostname>
 ```
 
 ### Pending
 - Get host address by name
+
+
+### Using the Interceptor
+- Up/Down arrow - scroll
+- Page Up/Down - toggle forwarding/dropping of packets
+- Right arrow - copy message to input box
+- Left arrow - toggle direction of spoofed message

@@ -2,14 +2,7 @@
 NS chat app
 
 ## General instruction
-### For testing
-```bash
-make test
-# for server
-./main -s
-# for client
-./main -c
-```
+
 ### Removing all binaries
 ```bash
 make clean
@@ -21,12 +14,14 @@ make
 # for server
 ./main -s
 # for client
-./main -c hostname
-```
-### Removing all binaries
-```bash
-make clean
+./main -c <server-hostname>
+# for passive interceptor
+./main -m <server-hostname> <client-hostname>
 ```
 
 ### Pending
 - Get host address by name
+
+
+### Using the Interceptor
+- Up/Down arrow - scroll
