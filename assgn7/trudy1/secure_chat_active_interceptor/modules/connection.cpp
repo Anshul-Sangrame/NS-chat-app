@@ -10,14 +10,18 @@ string connection::read_data()
 {
     char buffer[BUFF_SIZE];
     int n;
+    int ret;
 
     if (!is_SSL && (n = recv(sockfd, buffer, BUFF_SIZE, 0)) < 0)
     {
         throw runtime_error(string("socket read failed: ") + strerror(errno));
     }
-    if (is_SSL && (SSL_read_ex(ssl, buffer, BUFF_SIZE, (size_t *)&n)) <= 0)
+    if (is_SSL && (ret = SSL_read_ex(ssl, buffer, BUFF_SIZE, (size_t *)&n)) <= 0)
     {
-        ERR_print_errors_fp(stderr);
+        if (SSL_get_error(ssl, ret) == SSL_ERROR_ZERO_RETURN)
+        {
+            throw runtime_error("Connection ended by peer");
+        }
         throw runtime_error("SSL socket read failed");
     }
 
@@ -164,13 +168,78 @@ void connection::create_socket()
     }
 }
 
+int verify_callback(int preverify_ok, X509_STORE_CTX *ctx)
+{
+
+    // X509_STORE* store = SSL_CTX_get_cert_store(ctx);
+    // SSL *ssl = static_cast<SSL *>(X509_STORE_CTX_get_ex_data(ctx, SSL_get_ex_data_X509_STORE_CTX_idx()));
+    // SSL_CTX *ssl_ctx = SSL_get_SSL_CTX(ssl);
+    // X509 *cert = X509_STORE_CTX_get0_cert(ctx);
+
+    if (X509_STORE_CTX_get_error_depth(ctx) == 0)
+    {
+        return 1;
+    }
+
+    return preverify_ok;
+}
+
+void connection::prepare_ctx()
+{
+    ctx = SSL_CTX_new(DTLS_method());
+    SSL_CTX_set_min_proto_version(ctx, DTLS1_2_VERSION);
+
+    const char *cipher_list = "ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:TLS_AES_256_GCM_SHA384:AES256-GCM-SHA384:AES128-SHA256:AES128-SHA";
+
+    if (SSL_CTX_set_cipher_list(ctx, cipher_list) == 0)
+    {
+        ERR_print_errors_fp(stderr);
+        throw runtime_error("Unable to set cipher suites");
+    }
+    string cert_loc;
+    string priv_loc;
+    if (to_name == "alice1")
+    {
+        cert_loc = "my_cert/fakealice-cert.crt";
+        priv_loc = "my_cert/fakealice-key.pem";
+    }
+    if (to_name == "bob1")
+    {
+        cert_loc = "my_cert/fakebob-cert.crt";
+        priv_loc = "my_cert/fakebob-key.pem";
+    }
+    if (SSL_CTX_use_certificate_file(ctx, cert_loc.c_str(), SSL_FILETYPE_PEM) <= 0)
+    {
+        ERR_print_errors_fp(stderr);
+        throw runtime_error("Can't load certificate");
+    }
+
+    if (SSL_CTX_use_PrivateKey_file(ctx, priv_loc.c_str(), SSL_FILETYPE_PEM) <= 0)
+    {
+        ERR_print_errors_fp(stderr);
+        throw runtime_error("Can't load private key");
+    }
+
+    if (!SSL_CTX_load_verify_locations(ctx, "trust_store/cert-chain.crt", NULL))
+    {
+        ERR_print_errors_fp(stderr);
+        throw runtime_error("Error in loading certificate");
+    }
+
+    SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, verify_callback);
+    SSL_CTX_set_verify_depth(ctx, 4);
+    // SSL_CTX_set_session_ticket_cb(ctx, NULL, , NULL);
+
+    // session_handler();
+}
+
 void connection::prepare_ssl()
 {
     ssl = SSL_new(ctx);
     SSL_set_fd(ssl, sockfd);
 }
 
-connection::~connection()
+void connection::stop()
 {
     if (is_SSL)
     {
@@ -183,9 +252,26 @@ connection::~connection()
                 break;
             }
         }
+    }
+    close(sockfd);
+}
+
+connection::~connection()
+{
+    stop();
+    if (is_SSL)
+    {
+        // int res;
+        // while ((res = SSL_shutdown(ssl)) != 1)
+        // {
+        //     if (res < 0)
+        //     {
+        //         ERR_print_errors_fp(stderr);
+        //         break;
+        //     }
+        // }
         SSL_free(ssl);
         SSL_CTX_free(ctx);
     }
     close(sockfd);
-    cout << "closed\n";
 }

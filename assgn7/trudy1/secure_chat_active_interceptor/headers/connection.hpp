@@ -17,11 +17,13 @@ protected:
     bool is_SSL;
     SSL_CTX *ctx;
     SSL *ssl;
+    SSL_SESSION* session;
 
     void create_socket();
     virtual void establish_conn() = 0;
-    virtual void prepare_ctx() = 0;
+    void prepare_ctx();
     void prepare_ssl();
+    // virtual void session_handler() = 0;
 
     message construct_message(std::string);
     std::string messageToString(message);
@@ -29,13 +31,14 @@ protected:
     void convert_to_non_blocking();
     void convert_to_blocking();
     void send_data(std::string);
+    void stop();
+    virtual void startSSL() = 0;
 
 public:
     std::string to_name;
     message read_msg();
     void send_msg(message);
     message send_control(message);
-    virtual void startSSL() = 0;
     ~connection();
 };
 
@@ -43,11 +46,11 @@ class client_connection : public connection
 {
 private:
     void establish_conn();
-    void prepare_ctx();
+    void startSSL();
+    // void session_handler();
 
 public:
     client_connection(std::string _hostname, uint16_t _port);
-    void startSSL();
 };
 
 class server_connection : public connection
@@ -55,9 +58,9 @@ class server_connection : public connection
 private:
     void bind_sock();
     void establish_conn();
-    void prepare_ctx();
+    void startSSL();
+    // void session_handler();
 
 public:
     server_connection(uint16_t _port);
-    void startSSL();
 };

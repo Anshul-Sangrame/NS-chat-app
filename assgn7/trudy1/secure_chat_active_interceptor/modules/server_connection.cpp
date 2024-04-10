@@ -4,6 +4,8 @@
 #include <netdb.h>
 using namespace std;
 
+#define SESSION_SIZE 5000
+
 server_connection::server_connection(uint16_t _port)
 {
     is_SSL = false;
@@ -66,42 +68,57 @@ void server_connection::establish_conn()
     send_msg(reply);
 }
 
-void server_connection::prepare_ctx()
-{
-    ctx = SSL_CTX_new(DTLS_server_method());
-    SSL_CTX_set_min_proto_version(ctx, DTLS1_2_VERSION);
+// void server_connection::session_get_from_file()
+// {
+//     FILE *fp = fopen("session/sess.dat", "rb");
+//     unsigned char *bytes = new unsigned char[SESSION_SIZE];
+//     int len = fread(bytes, 1, SESSION_SIZE, fp);
+//     if (len == 0)
+//         return;
+//     session = d2i_SSL_SESSION(NULL, (const unsigned char **)&bytes, len);
+//     SSL_set_session(ssl, session);
+//     fclose(fp);
+//     // delete[] bytes;
+// }
 
-    const char *cipher_list = "ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:TLS_AES_256_GCM_SHA384:AES256-GCM-SHA384:AES128-SHA256:AES128-SHA";
+// void server_connection::session_store_in_file()
+// {
+//     session = SSL_get0_session(ssl);
+//     FILE *fp = fopen("session/sess.dat", "wb");
+//     unsigned char *bytes = NULL;
+//     int len = i2d_SSL_SESSION(session, &bytes);
+//     if (len < 0)
+//         throw runtime_error("Error in session store in file");
+//     fwrite(bytes, 1, len, fp);
+//     fclose(fp);
+// }
 
-    if (SSL_CTX_set_cipher_list(ctx, cipher_list) == 0)
-    {
-        ERR_print_errors_fp(stderr);
-        throw runtime_error("Unable to set cipher suites");
-    }
+// SSL_TICKET_RETURN dec_cb(
+//     SSL *s,
+//     SSL_SESSION *ss,
+//     const unsigned char *keyname,
+//     size_t keyname_len,
+//     SSL_TICKET_STATUS status,
+//     void *arg)
+// {
+//     unsigned int len;
+//     const unsigned char * id = SSL_SESSION_get_id(ss,&len);
+// }
 
-    if (SSL_CTX_use_certificate_file(ctx, "my_cert/bob-cert.crt", SSL_FILETYPE_PEM) <= 0)
-    {
-        ERR_print_errors_fp(stderr);
-        throw runtime_error("Can't load certificate");
-    }
-
-    if (SSL_CTX_use_PrivateKey_file(ctx, "my_cert/bob-key.pem", SSL_FILETYPE_PEM) <= 0)
-    {
-        ERR_print_errors_fp(stderr);
-        throw runtime_error("Can't load private key");
-    }
-
-    if (!SSL_CTX_load_verify_locations(ctx, "trust_store/cert-chain.crt", NULL))
-    {
-        ERR_print_errors_fp(stderr);
-        throw runtime_error("Error in loading certificate");
-    }
-}
+// void server_connection::session_handler()
+// {
+//     SSL_CTX_set_session_ticket_cb(ctx, NULL, dec_cb, NULL);
+// }
 
 void server_connection::startSSL()
 {
     message msg = read_msg();
-    if (msg.hdr.type == CONTROL && msg.body == "CHAT_NO_SSL")
+    if (msg.hdr.type != CONTROL)
+    {
+        throw runtime_error(string("SSL socket connection failed: Non control message recieved"));
+    }
+
+    if (msg.body == "CHAT_NO_SSL")
     {
         message reply = {
             .hdr = {
@@ -111,14 +128,29 @@ void server_connection::startSSL()
         send_msg(reply);
         return;
     }
-    if (msg.hdr.type != CONTROL || msg.body != "CHAT_START_SSL")
+
+    if (msg.body != "CHAT_START_SSL")
     {
         throw runtime_error(string("SSL socket connection failed: invalid start_ssl"));
     }
+
     message reply = {
         .hdr = {
             .type = CONTROL,
             .time = time(NULL)},
-        .body = "CHAT_START_SSL_NOT_SUPPORTED"};
+        .body = "CHAT_START_SSL_ACK"};
     send_msg(reply);
+
+    prepare_ctx();
+    prepare_ssl();
+
+    // session = SSL_get0_session(ssl);
+
+    if (SSL_accept(ssl) != 1)
+    {
+        ERR_print_errors_fp(stderr);
+        throw runtime_error("Error in handshake");
+    }
+
+    is_SSL = true;
 }
