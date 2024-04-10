@@ -3,6 +3,8 @@
 using namespace std;
 
 #define PORT 8080
+#define PORT 8081
+
 
 int main(int argc, char *argv[])
 {
@@ -26,6 +28,7 @@ int main(int argc, char *argv[])
         con1 = new client_connection(argv[2],PORT);
         con2 = new server_connection(PORT);
         // Rajiv add passive handler here
+        cerr << "reaching";
         PassiveHandler h(con1,con2);
         
         

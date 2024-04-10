@@ -4,6 +4,8 @@
 #include <netdb.h>
 using namespace std;
 
+#define SESSION_SIZE 5000
+
 server_connection::server_connection(uint16_t _port)
 {
     is_SSL = false;
@@ -67,9 +69,27 @@ void server_connection::establish_conn()
     send_msg(reply);
 }
 
-void server_connection::session_handler()
+void server_connection::session_get_from_file()
 {
-    // handles server side session
+    FILE *fp = fopen("session/sess.dat","rb");
+    unsigned char *bytes = new unsigned char[SESSION_SIZE];
+    int len = fread(bytes,1,SESSION_SIZE,fp);
+    if (len == 0) return;
+    session = d2i_SSL_SESSION(NULL,(const unsigned char **)&bytes,len);
+    SSL_set_session(ssl,session);
+    fclose(fp);
+    // delete[] bytes;
+}
+
+void server_connection::session_store_in_file()
+{
+    session = SSL_get0_session(ssl);
+    FILE *fp = fopen("session/sess.dat","wb");
+    unsigned char *bytes = NULL;
+    int len = i2d_SSL_SESSION(session,&bytes);
+    if (len < 0) throw runtime_error("Error in session store in file");
+    fwrite(bytes,1,len,fp);
+    fclose(fp);
 }
 
 void server_connection::startSSL()
@@ -110,11 +130,15 @@ void server_connection::startSSL()
     prepare_ctx();
     prepare_ssl();
 
+    session_get_from_file();
+
     if (SSL_accept(ssl) != 1)
     {
         ERR_print_errors_fp(stderr);
         throw runtime_error("Error in handshake");
     }
+
+    session_store_in_file();
 
     is_SSL = true;
 }

@@ -4,7 +4,7 @@
 #include <netdb.h>
 using namespace std;
 
-#define SESSION_SIZE 10000
+#define SESSION_SIZE 5000
 
 client_connection::client_connection(std::string _to_name , uint16_t _port)
 {

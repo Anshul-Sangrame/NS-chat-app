@@ -17,6 +17,7 @@ protected:
     bool is_SSL;
     SSL_CTX *ctx;
     SSL *ssl;
+    SSL_SESSION* session;
 
     void create_socket();
     virtual void establish_conn() = 0;
@@ -31,7 +32,6 @@ protected:
     void send_data(std::string);
     void stop();
     virtual void startSSL() = 0;
-    virtual void session_handler() = 0;
 
 public:
     std::string to_name;
@@ -58,7 +58,8 @@ private:
     void bind_sock();
     void establish_conn();
     void startSSL();
-    void session_handler();
+    void session_get_from_file();
+    void session_store_in_file();
 
 public:
     server_connection(uint16_t _port);

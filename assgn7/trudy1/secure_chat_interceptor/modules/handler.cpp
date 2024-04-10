@@ -392,10 +392,3 @@ ActiveHandler::ActiveHandler(connection* c1, connection* c2){
     t1.join();
     t2.join();
 }
-
-int main(){
-        // Handler h(nullptr);
-        // PassiveHandler h(nullptr, nullptr);
-        ActiveHandler h((connection*)(long)1, nullptr);
-        return 0;
-}
