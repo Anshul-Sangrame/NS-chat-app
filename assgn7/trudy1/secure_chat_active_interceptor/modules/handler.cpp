@@ -18,6 +18,7 @@ message to_message(string msg)
 void Display::open_screen(){
     initscr();
     cbreak();
+    timeout(50);
     noecho();
     keypad(stdscr, TRUE);
 }

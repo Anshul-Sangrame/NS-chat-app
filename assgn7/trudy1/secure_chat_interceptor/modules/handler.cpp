@@ -18,6 +18,7 @@ message to_message(string msg)
 void Display::open_screen(){
     initscr();
     cbreak();
+    timeout(50);
     noecho();
     keypad(stdscr, TRUE);
 }
@@ -297,7 +298,7 @@ void PassiveHandler::receiver(connection* c1, connection* c2){
 void PassiveHandler::inputHandler() {
     while (!terminated) {
         int c = wgetch(stdscr);       
-
+        if (c == ERR) continue;
         switch (c) {
             // case KEY_END: {
             //     terminated = true;

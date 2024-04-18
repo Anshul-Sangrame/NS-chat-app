@@ -16,6 +16,7 @@ connection *init_connection(bool is_server, uint16_t port, string hostname = "")
 int main(int argc, char *argv[])
 {
     connection *con = NULL;
+    bool terminate = false;
     try
     {
         if (argc < 2)
@@ -40,8 +41,32 @@ int main(int argc, char *argv[])
             return 0;
         }
 
-        con = init_connection(is_server, PORT, hostname);
-        Handler h(con);
+        if (is_server)
+        {
+            while (!terminate)
+            {
+                con = init_connection(is_server, PORT, hostname);
+                {
+                    Handler h(con);
+                }
+                cout << "Client " << con->to_name << " Exited\n";
+                delete con;
+                // cout << "Do you want to close Server?(y/n): ";
+                // string res;
+                // cin >> res;
+                // terminate = (res == "y");
+            }
+            
+        }
+        else
+        {
+            con = init_connection(is_server, PORT, hostname);
+            {
+                Handler h(con);
+            }
+            cout << "Server " << con->to_name << " Exited\n";
+            delete con;
+        }
     }
     catch (const std::exception &e)
     {
@@ -49,6 +74,6 @@ int main(int argc, char *argv[])
     }
 
     // Clean up
-    delete con;
+    // delete con;
     return 0;
 }
