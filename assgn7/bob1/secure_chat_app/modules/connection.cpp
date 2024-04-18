@@ -217,7 +217,7 @@ void connection::prepare_ctx()
         throw runtime_error("Error in loading certificate");
     }
 
-    SSL_CTX_set_session_cache_mode(ctx,SSL_SESS_CACHE_BOTH);
+    // SSL_CTX_set_session_cache_mode(ctx,SSL_SESS_CACHE_BOTH);
     SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, verify_callback);
     SSL_CTX_set_verify_depth(ctx, 4);
     // SSL_CTX_set_session_ticket_cb(ctx, NULL, , NULL);
