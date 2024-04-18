@@ -422,6 +422,10 @@ void ActiveHandler::inputHandler(connection* c1, connection* c2) {
             ui.draw_screen();
             break;
         }
+        // case KEY_HOME: {
+        //     drop_packets = !drop_packets;
+        //     break;
+        // }
         case KEY_NPAGE: {    // pg up = packets dropped
             drop_packets = true;
             break;
