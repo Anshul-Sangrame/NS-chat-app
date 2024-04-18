@@ -38,6 +38,7 @@ public:
     std::string to_name;
     message read_msg();
     void send_msg(message);
+    bool poll_msg();
     message send_control(message);
     ~connection();
 };
