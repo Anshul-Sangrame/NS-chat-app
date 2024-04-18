@@ -261,27 +261,48 @@ void Display::setInputPrefix(string prefix){
 
 /* PASSIVE HANDLER */
 
+// void PassiveHandler::receiver(connection* c1, connection* c2){
+//     int i = 0;
+//     string sender_name = c1->to_name;  // "them"
+//     while(!terminated){
+//         // message msg = to_message("test"+to_string(i++));
+//         // sleep(4);
+//         message msg = c1->read_msg();
+//         c2->send_msg(msg);
+//         ui.addMessage(msg, string(sender_name), CHAT_WHITE);
+//     }
+// }
+
 void PassiveHandler::receiver(connection* c1, connection* c2){
     int i = 0;
     string sender_name = c1->to_name;  // "them"
     while(!terminated){
-        // message msg = to_message("test"+to_string(i++));
-        // sleep(4);
-        message msg = c1->read_msg();
-        c2->send_msg(msg);
-        ui.addMessage(msg, string(sender_name), CHAT_WHITE);
+        if (c1->poll_msg())
+        {
+            message msg = c1->read_msg();
+            c2->send_msg(msg)
+            if (msg.hdr.type == CONTROL &&  && msg.body == "CHAT_CLOSE_ACK")
+            {
+                terminated = true;
+                break;
+            }
+            else if (msg.hdr.type != CONTROL) {
+                ui.addMessage(msg, string(sender_name), CHAT_WHITE);
+            }
+        }
     }
 }
+
 
 void PassiveHandler::inputHandler() {
     while (!terminated) {
         int c = wgetch(stdscr);       
 
         switch (c) {
-            case KEY_END: {
-                terminated = true;
-                break;
-            }
+            // case KEY_END: {
+            //     terminated = true;
+            //     break;
+            // }
             case KEY_DOWN: {
                 ui.scrollMessages(1);
                 ui.draw_screen(); 
@@ -317,21 +338,33 @@ PassiveHandler::PassiveHandler(connection* c1, connection* c2){
 
 void ActiveHandler::receiver(connection* c1, connection* c2){
     int i = 0;
-    // string from_name = c1->to_name;
-    string from_name = c1->to_name;     // check for correctness
+    string from_name = c1->to_name;
     while(!terminated){
-        // sleep(4);
-        // message msg = to_message("test"+to_string(i++));    // TESTING 
-        message msg = c1->read_msg();
-        if(drop_packets){
-            ui.addMessage(msg, from_name, CHAT_RED);
-        }
-        else {
-            c2->send_msg(msg);
-            ui.addMessage(msg, from_name, CHAT_WHITE);
+        if (c1->poll_msg())
+        {
+            message msg = c1->read_msg();
+            
+            if (msg.hdr.type == CONTROL && msg.body == "CHAT_CLOSE_ACK") {
+                c2->send_msg(msg);
+                terminated = true;
+                break;
+            }
+
+            else if (msg.hdr.type == CONTROL) {
+                c2->send_msg(msg);
+            }
+
+            else if(drop_packets){
+                ui.addMessage(msg, from_name, CHAT_RED);
+            }
+            else {
+                c2->send_msg(msg);
+                ui.addMessage(msg, from_name, CHAT_WHITE);
+            }
         }
     }
 }
+
 
 void ActiveHandler::inputHandler(connection* c1, connection* c2) {
     message temp_msg;
@@ -342,6 +375,9 @@ void ActiveHandler::inputHandler(connection* c1, connection* c2) {
     while (!terminated) {
       int c = wgetch(stdscr);       
       switch (c) {
+        case ERR :  {
+            break;
+        }
         case '\n': {
             message msg = to_message(ui.input);
             ui.input = "";
@@ -353,10 +389,10 @@ void ActiveHandler::inputHandler(connection* c1, connection* c2) {
                 c1->send_msg(msg);
             break;
         }
-        case KEY_END: {
-            terminated = true;
-            break;
-        }
+        // case KEY_END: {
+        //     terminated = true;
+        //     break;
+        // }
         case KEY_DOWN: {
             ui.scrollMessages(1);
             ui.draw_screen(); 
