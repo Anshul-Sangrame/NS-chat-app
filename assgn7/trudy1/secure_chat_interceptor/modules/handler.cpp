@@ -281,7 +281,7 @@ void PassiveHandler::receiver(connection* c1, connection* c2){
         {
             message msg = c1->read_msg();
             c2->send_msg(msg);
-            if (msg.hdr.type == CONTROL &&  && msg.body == "CHAT_CLOSE_ACK")
+            if (msg.hdr.type == CONTROL && msg.body == "CHAT_CLOSE_ACK")
             {
                 terminated = true;
                 break;
