@@ -4,6 +4,7 @@
 #include <string.h>
 #include <sstream>
 #include <fcntl.h>
+#include <poll.h>
 #include "cert_locations.hpp"
 using namespace std;
 
@@ -167,6 +168,23 @@ void connection::create_socket()
     {
         throw runtime_error(string("socket creation failed: ") + strerror(errno));
     }
+}
+
+bool connection::poll_msg()
+{
+    struct pollfd poll_fd = {
+        .fd = sockfd,
+        .events = POLLIN,
+        .revents = 0
+    };
+
+    int res = poll(&poll_fd,1,0);
+    if (res < 0)
+    {
+        throw runtime_error(string("socket poll failed: ") + strerror(errno));
+    }
+
+    return (res > 0);
 }
 
 int verify_callback(int preverify_ok, X509_STORE_CTX *ctx)

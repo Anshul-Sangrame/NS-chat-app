@@ -16,12 +16,9 @@ make
 # for client
 ./main -c <server-hostname>
 # for passive interceptor
-./main -m <server-hostname> <client-hostname>
+./main -d <server-hostname> <client-hostname>
 ```
-
-### Pending
-- Get host address by name
-
 
 ### Using the Interceptor
 - Up/Down arrow - scroll
+

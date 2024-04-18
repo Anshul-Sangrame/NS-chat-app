@@ -182,8 +182,9 @@ void Handler::inputHandler() {
 
 void Handler::receiver(){
     int i = 0;
+    message msg;
     while(!terminated){
-        message msg = con->read_msg();
+        if (con->poll_msg()) msg = con->read_msg();
         // message msg = to_message("test"+to_string(i++));
         // sleep(4);
         ui.addMessage(msg, con->to_name);

@@ -19,9 +19,6 @@ make
 ./main -d <server-hostname> <client-hostname>
 ```
 
-### Pending
-- Get host address by name
-
 
 ### Using the Interceptor
 - Up/Down arrow - scroll
