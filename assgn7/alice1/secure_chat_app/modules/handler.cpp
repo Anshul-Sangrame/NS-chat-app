@@ -8,6 +8,7 @@ void Display::open_screen(){
     initscr();
     cbreak();
     noecho();
+    timeout(50);
     keypad(stdscr, TRUE);
 }
 
@@ -153,7 +154,7 @@ void Display::scrollMessages(int delta){
 void Handler::inputHandler() {
     while (!terminated) {
         int c = wgetch(stdscr);       
-
+        if (c == ERR) continue;
         if(c=='\n'){
             message msg = to_message(ui.input);
             ui.input = "";
@@ -162,6 +163,16 @@ void Handler::inputHandler() {
         }   
         else if (c==KEY_END){
             terminated = true;
+            con->send_msg(
+                {
+                    .hdr = {
+                        .type =CONTROL,
+                        .time = time(NULL)
+                    },
+                    .body = "CHAT_CLOSE"
+                }
+            );
+            message reply = con->read_msg();
         }      
         else if (c==KEY_DOWN){
             ui.scrollMessages(1);
@@ -182,12 +193,29 @@ void Handler::inputHandler() {
 
 void Handler::receiver(){
     int i = 0;
-    message msg;
+
     while(!terminated){
-        if (con->poll_msg()) msg = con->read_msg();
-        // message msg = to_message("test"+to_string(i++));
-        // sleep(4);
-        ui.addMessage(msg, con->to_name);
+        if (con->poll_msg())
+        {
+            message msg = con->read_msg();
+            // message msg = to_message("test"+to_string(i++));
+            // sleep(4);
+            if (msg.hdr.type == CONTROL && msg.body == "CHAT_CLOSE")
+            {
+                terminated = true;
+                con->send_msg(
+                    {
+                        .hdr = {
+                            .type = CONTROL,
+                            .time = time(NULL)
+                        },
+                        .body = "CHAT_CLOSE_ACK"
+                    }
+                );
+                break;
+            }
+            ui.addMessage(msg, con->to_name);  
+        } 
     }
 }
 
