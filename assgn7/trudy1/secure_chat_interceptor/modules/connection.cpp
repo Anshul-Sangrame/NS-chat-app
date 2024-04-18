@@ -4,6 +4,8 @@
 #include <string.h>
 #include <sstream>
 #include <fcntl.h>
+#include <poll.h>
+
 using namespace std;
 
 string connection::read_data()
